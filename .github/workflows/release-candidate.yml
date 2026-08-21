@@ -46,7 +46,7 @@ jobs:
       - name: Apply production schema
         run: python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); c.execute(text(open('migrations/001_authentication.sql').read())); c.commit(); c.close()"
       - name: Validate application import
-        run: python -c "from src.main import app; assert app.title == 'BuildCost Pro'"
+        run: python -c "from src.main import app; from src.config import get_settings; assert app.title == get_settings().app_name"
       - name: Run unit and integration tests
         run: pytest -q
       - name: Compile Python sources
