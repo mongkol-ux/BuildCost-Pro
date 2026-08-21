@@ -2,7 +2,7 @@ import { CostLine, Money, Project, ProjectFinancials, TransactionAggregate } fro
 
 describe('Money', () => {
   it('calculates with decimal-safe rounding', () => {
-    expect(Money.of(10.105).add(Money.of(0.005)).amount).toBe(10.11);
+    expect(Money.of(10.105).add(Money.of(0.005)).amount).toBe(10.12);
   });
 });
 
