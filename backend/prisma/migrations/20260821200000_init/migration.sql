@@ -1,0 +1,14 @@
+CREATE TYPE "ProjectStatus" AS ENUM ('DRAFT','ACTIVE','COMPLETED','ARCHIVED');
+CREATE TYPE "TransactionType" AS ENUM ('INCOME','EXPENSE','ADJUSTMENT');
+CREATE TABLE "Project" ("id" TEXT NOT NULL,"code" TEXT NOT NULL,"name" TEXT NOT NULL,"description" TEXT,"status" "ProjectStatus" NOT NULL DEFAULT 'DRAFT',"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Project_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Budget" ("id" TEXT NOT NULL,"projectId" TEXT NOT NULL,"name" TEXT NOT NULL,"amount" DECIMAL(18,2) NOT NULL,"spent" DECIMAL(18,2) NOT NULL DEFAULT 0,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Budget_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Cost" ("id" TEXT NOT NULL,"projectId" TEXT NOT NULL,"category" TEXT NOT NULL,"description" TEXT,"quantity" DECIMAL(18,4) NOT NULL,"unitCost" DECIMAL(18,2) NOT NULL,"total" DECIMAL(18,2) NOT NULL,"occurredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "Cost_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Transaction" ("id" TEXT NOT NULL,"projectId" TEXT NOT NULL,"type" "TransactionType" NOT NULL,"reference" TEXT,"description" TEXT,"amount" DECIMAL(18,2) NOT NULL,"occurredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "Project_code_key" ON "Project"("code");
+CREATE INDEX "Project_status_idx" ON "Project"("status");
+CREATE INDEX "Budget_projectId_idx" ON "Budget"("projectId");
+CREATE INDEX "Cost_projectId_occurredAt_idx" ON "Cost"("projectId","occurredAt");
+CREATE INDEX "Transaction_projectId_occurredAt_idx" ON "Transaction"("projectId","occurredAt");
+ALTER TABLE "Budget" ADD CONSTRAINT "Budget_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Cost" ADD CONSTRAINT "Cost_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
