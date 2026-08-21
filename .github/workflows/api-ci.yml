@@ -2,6 +2,7 @@ name: API CI
 
 on:
   push:
+    branches: [main]
     paths:
       - 'apps/api/**'
       - '.github/workflows/api-ci.yml'
@@ -9,6 +10,7 @@ on:
     paths:
       - 'apps/api/**'
       - '.github/workflows/api-ci.yml'
+  workflow_dispatch:
 
 jobs:
   test:
