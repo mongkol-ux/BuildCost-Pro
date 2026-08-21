@@ -60,6 +60,10 @@ def login(db: Session, email: str, password: str, ip: str | None, ua: str | None
         audit(db, "auth.login_failed", user.id, ip, ua, reason="invalid_credentials")
         db.commit()
         raise ValueError("invalid credentials")
+    if not user.email_verified_at:
+        audit(db, "auth.login_blocked", user.id, ip, ua, reason="email_not_verified")
+        db.commit()
+        raise PermissionError("email verification required")
     user.failed_login_count = 0
     user.locked_until = None
     access, refresh = _new_session(db, user, ip, ua)
@@ -70,7 +74,7 @@ def login(db: Session, email: str, password: str, ip: str | None, ua: str | None
 
 def rotate_refresh(db: Session, refresh: str, ip: str | None, ua: str | None) -> tuple[str, str, int]:
     settings = get_settings()
-    session = db.scalar(select(AuthSession).where(AuthSession.refresh_token_hash == token_hash(refresh)))
+    session = db.scalar(select(AuthSession).where(AuthSession.refresh_token_hash == token_hash(refresh)).with_for_update())
     if not session or session.revoked_at or session.expires_at <= _now():
         raise PermissionError("invalid refresh token")
     user = db.get(User, session.user_id)
@@ -101,7 +105,7 @@ def revoke_all_sessions(db: Session, user_id: str) -> None:
 
 
 def consume_one_time_token(db: Session, raw: str, purpose: str) -> User:
-    item = db.scalar(select(OneTimeToken).where(OneTimeToken.token_hash == token_hash(raw), OneTimeToken.purpose == purpose))
+    item = db.scalar(select(OneTimeToken).where(OneTimeToken.token_hash == token_hash(raw), OneTimeToken.purpose == purpose).with_for_update())
     if not item or item.consumed_at or item.expires_at <= _now():
         raise ValueError("invalid or expired token")
     item.consumed_at = _now()
