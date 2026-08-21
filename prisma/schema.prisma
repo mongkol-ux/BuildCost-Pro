@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus { ACTIVE INACTIVE SUSPENDED }
+enum ProjectStatus { DRAFT ACTIVE ON_HOLD COMPLETED CANCELLED }
+enum TransactionType { INCOME EXPENSE TRANSFER }
+enum TransactionStatus { DRAFT POSTED VOIDED }
+enum PaymentStatus { PENDING PARTIAL PAID CANCELLED }
+enum CostCategoryType { MATERIAL LABOR EQUIPMENT SUBCONTRACT FUEL OTHER }
+enum EvidenceType { NONE RECEIPT INVOICE TAX_INVOICE QUOTATION CONTRACT PHOTO OTHER }
+
+enum ApprovalStatus { PENDING APPROVED REJECTED }
+
+enum DocumentType { RECEIPT INVOICE TAX_INVOICE CONTRACT QUOTATION BOQ OTHER }
+
+enum PartyType { CUSTOMER SUPPLIER OTHER }
+
+model Company {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  taxId       String?  @db.VarChar(50)
+  phone       String?  @db.VarChar(50)
+  email       String?  @db.VarChar(150)
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+  projects    Project[]
+  customers   Customer[]
+  suppliers   Supplier[]
+  categories  Category[]
+  units       Unit[]
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  companyId    String     @db.Uuid
+  email        String     @unique @db.VarChar(150)
+  passwordHash String
+  firstName    String     @db.VarChar(100)
+  lastName     String     @db.VarChar(100)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  company      Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  projects     Project[]  @relation("ProjectCreatedBy")
+  transactions Transaction[]
+  approvals    Approval[]
+  auditLogs    AuditLog[]
+
+  @@index([companyId])
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  code      String   @db.VarChar(50)
+  name      String   @db.VarChar(200)
+  taxId     String?  @db.VarChar(50)
+  phone     String?  @db.VarChar(50)
+  email     String?  @db.VarChar(150)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  projects  Project[]
+
+  @@unique([companyId, code])
+  @@index([companyId, name])
+}
+
+model Supplier {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  code      String   @db.VarChar(50)
+  name      String   @db.VarChar(200)
+  taxId     String?  @db.VarChar(50)
+  phone     String?  @db.VarChar(50)
+  email     String?  @db.VarChar(150)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  expenses  Transaction[] @relation("SupplierExpenses")
+
+  @@unique([companyId, code])
+  @@index([companyId, name])
+}
+
+model Project {
+  id            String        @id @default(uuid()) @db.Uuid
+  companyId     String        @db.Uuid
+  customerId    String?       @db.Uuid
+  createdById   String        @db.Uuid
+  code          String        @db.VarChar(50)
+  name          String        @db.VarChar(200)
+  description   String?
+  status        ProjectStatus @default(DRAFT)
+  startDate     DateTime?     @db.Date
+  endDate       DateTime?     @db.Date
+  contractValue Decimal?      @db.Decimal(18, 2)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy     User          @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  budgets       Budget[]
+  transactions  Transaction[]
+  costItems     CostItem[]
+  documents     Document[]
+  approvals     Approval[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+}
+
+model Category {
+  id        String           @id @default(uuid()) @db.Uuid
+  companyId String           @db.Uuid
+  code      String           @db.VarChar(50)
+  name      String           @db.VarChar(150)
+  type      CostCategoryType
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  costItems CostItem[]
+
+  @@unique([companyId, code])
+}
+
+model Unit {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  code      String   @db.VarChar(30)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  costItems CostItem[]
+
+  @@unique([companyId, code])
+}
+
+model Budget {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  name      String   @db.VarChar(150)
+  version   Int      @default(1)
+  total     Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items     BudgetItem[]
+
+  @@unique([projectId, version])
+}
+
+model BudgetItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  budgetId    String   @db.Uuid
+  categoryId  String?  @db.Uuid
+  description String   @db.VarChar(255)
+  quantity    Decimal  @default(1) @db.Decimal(18, 4)
+  unitPrice   Decimal  @default(0) @db.Decimal(18, 2)
+  amount      Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt   DateTime @default(now())
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
+}
+
+model CostItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @db.Uuid
+  categoryId  String   @db.Uuid
+  unitId      String?  @db.Uuid
+  description String   @db.VarChar(255)
+  quantity    Decimal  @default(1) @db.Decimal(18, 4)
+  unitPrice   Decimal  @default(0) @db.Decimal(18, 2)
+  amount      Decimal  @default(0) @db.Decimal(18, 2)
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  unit        Unit?    @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, categoryId])
+}
+
+model Transaction {
+  id            String             @id @default(uuid()) @db.Uuid
+  projectId     String             @db.Uuid
+  userId        String             @db.Uuid
+  supplierId    String?            @db.Uuid
+  type          TransactionType
+  status        TransactionStatus  @default(DRAFT)
+  paymentStatus PaymentStatus      @default(PENDING)
+  evidenceType  EvidenceType       @default(NONE)
+  description   String             @db.VarChar(255)
+  referenceNo   String?            @db.VarChar(100)
+  transactionAt DateTime           @default(now())
+  subtotal      Decimal            @default(0) @db.Decimal(18, 2)
+  taxAmount     Decimal            @default(0) @db.Decimal(18, 2)
+  totalAmount   Decimal            @default(0) @db.Decimal(18, 2)
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  project       Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  supplier      Supplier?          @relation("SupplierExpenses", fields: [supplierId], references: [id], onDelete: SetNull)
+  items         TransactionItem[]
+  documents     Document[]
+  payments      Payment[]
+  approvals     Approval[]
+
+  @@index([projectId, transactionAt])
+  @@index([projectId, type, status])
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid()) @db.Uuid
+  transactionId String      @db.Uuid
+  categoryId    String?     @db.Uuid
+  description   String      @db.VarChar(255)
+  quantity      Decimal     @default(1) @db.Decimal(18, 4)
+  unitPrice     Decimal     @default(0) @db.Decimal(18, 2)
+  amount        Decimal     @default(0) @db.Decimal(18, 2)
+  createdAt     DateTime    @default(now())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+model Payment {
+  id            String      @id @default(uuid()) @db.Uuid
+  transactionId String      @db.Uuid
+  amount        Decimal     @db.Decimal(18, 2)
+  paidAt        DateTime    @default(now())
+  method        String?     @db.VarChar(50)
+  referenceNo   String?     @db.VarChar(100)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId, paidAt])
+}
+
+model Document {
+  id            String       @id @default(uuid()) @db.Uuid
+  projectId     String       @db.Uuid
+  transactionId String?      @db.Uuid
+  type          DocumentType
+  fileName      String       @db.VarChar(255)
+  storageKey    String       @db.VarChar(500)
+  mimeType      String?      @db.VarChar(100)
+  fileSize      BigInt?
+  createdAt     DateTime     @default(now())
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, type])
+}
+
+model Approval {
+  id            String         @id @default(uuid()) @db.Uuid
+  projectId     String         @db.Uuid
+  transactionId String?        @db.Uuid
+  approverId    String         @db.Uuid
+  status        ApprovalStatus @default(PENDING)
+  comment       String?
+  decidedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  transaction   Transaction?   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  approver      User           @relation(fields: [approverId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  entityType String   @db.VarChar(80)
+  entityId   String   @db.VarChar(80)
+  action     String   @db.VarChar(50)
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
