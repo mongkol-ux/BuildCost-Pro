@@ -2,16 +2,16 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
+def validate_strong_password(value: str) -> str:
+    if not any(c.islower() for c in value) or not any(c.isupper() for c in value) or not any(c.isdigit() for c in value):
+        raise ValueError("password must include upper, lower and numeric characters")
+    return value
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=12, max_length=128)
-
-    @field_validator("password")
-    @classmethod
-    def strong_password(cls, value: str) -> str:
-        if not any(c.islower() for c in value) or not any(c.isupper() for c in value) or not any(c.isdigit() for c in value):
-            raise ValueError("password must include upper, lower and numeric characters")
-        return value
+    _strong = field_validator("password")(validate_strong_password)
 
 
 class LoginRequest(BaseModel):
@@ -21,6 +21,7 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     expires_in: int
 
@@ -36,6 +37,11 @@ class OneTimeTokenRequest(BaseModel):
 class PasswordResetRequest(BaseModel):
     token: str = Field(min_length=32)
     new_password: str = Field(min_length=12, max_length=128)
+    _strong = field_validator("new_password")(validate_strong_password)
+
+
+class PasswordResetEmailRequest(BaseModel):
+    email: EmailStr
 
 
 class SessionResponse(BaseModel):
