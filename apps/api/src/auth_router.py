@@ -1,11 +1,12 @@
 """HTTP authentication endpoints."""
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from .auth_models import AuthSession, User
-from .auth_schemas import LoginRequest, OneTimeTokenRequest, PasswordResetRequest, RefreshRequest, RegisterRequest, SessionResponse, TokenResponse
+from .auth_schemas import LoginRequest, OneTimeTokenRequest, PasswordResetEmailRequest, PasswordResetRequest, RefreshRequest, RegisterRequest, SessionResponse, TokenResponse
 from .auth_security import decode_access_token
 from .auth_service import login, register, request_password_reset, reset_password, revoke_all_sessions, revoke_session, rotate_refresh, verify_email
 from .config import get_settings
@@ -26,24 +27,24 @@ def db_session():
 
 
 def client_meta(request: Request, forwarded_for: str | None, user_agent: str | None):
-    ip = (forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else None))
+    ip = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else None)
     return ip, user_agent or request.headers.get("user-agent")
 
 
 def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(db_session)) -> User:
     if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="authentication required")
+        raise HTTPException(status_code=401, detail="authentication required")
     try:
         payload = decode_access_token(credentials.credentials)
     except InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid access token")
+        raise HTTPException(status_code=401, detail="invalid access token")
     session = db.scalar(select(AuthSession).where(AuthSession.id == payload["sid"], AuthSession.user_id == payload["sub"]))
-    if not session or session.revoked_at or session.expires_at <= __import__("datetime").datetime.now(__import__("datetime").timezone.utc):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="session is not active")
+    if not session or session.revoked_at or session.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="session is not active")
     user = db.get(User, payload["sub"])
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user is not active")
-    session.last_seen_at = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+        raise HTTPException(status_code=401, detail="user is not active")
+    session.last_seen_at = datetime.now(timezone.utc)
     db.commit()
     return user
 
@@ -67,7 +68,7 @@ def login_endpoint(body: LoginRequest, request: Request, x_forwarded_for: str | 
         raise HTTPException(status_code=423, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc))
-    return TokenResponse(access_token=access, expires_in=expires_in)
+    return TokenResponse(access_token=access, refresh_token=refresh, expires_in=expires_in)
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -77,7 +78,7 @@ def refresh_endpoint(body: RefreshRequest, request: Request, x_forwarded_for: st
         access, refresh, expires_in = rotate_refresh(db, body.refresh_token, ip, ua)
     except PermissionError as exc:
         raise HTTPException(status_code=401, detail=str(exc))
-    return TokenResponse(access_token=access, expires_in=expires_in)
+    return TokenResponse(access_token=access, refresh_token=refresh, expires_in=expires_in)
 
 
 @router.post("/verify-email")
@@ -90,11 +91,8 @@ def verify_email_endpoint(body: OneTimeTokenRequest, db: Session = Depends(db_se
 
 
 @router.post("/password-reset/request")
-def password_reset_request_endpoint(body: dict, db: Session = Depends(db_session)):
-    email = str(body.get("email", ""))
-    if not email:
-        raise HTTPException(status_code=400, detail="email is required")
-    request_password_reset(db, email)
+def password_reset_request_endpoint(body: PasswordResetEmailRequest, db: Session = Depends(db_session)):
+    request_password_reset(db, body.email)
     return {"accepted": True}
 
 
