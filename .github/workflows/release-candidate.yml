@@ -1,0 +1,53 @@
+name: Production Release Candidate Validation
+
+on:
+  push:
+    branches:
+      - release-candidate/**
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  api-rc-validation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: buildcost
+          POSTGRES_PASSWORD: buildcost
+          POSTGRES_DB: buildcost
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U buildcost -d buildcost"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      BUILD_COST_ENVIRONMENT: production
+      BUILD_COST_DATABASE_URL: postgresql+psycopg://buildcost:buildcost@localhost:5432/buildcost
+      BUILD_COST_JWT_SECRET: rc-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz
+      BUILD_COST_JWT_ISSUER: buildcost-pro
+      BUILD_COST_ALLOWED_HOSTS: testserver,localhost
+      BUILD_COST_CORS_ORIGINS: http://localhost:3000
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+      - name: Apply production schema
+        run: python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); c.execute(text(open('migrations/001_authentication.sql').read())); c.commit(); c.close()"
+      - name: Validate application import
+        run: python -c "from src.main import app; assert app.title == 'BuildCost Pro'"
+      - name: Run unit and integration tests
+        run: pytest -q
+      - name: Compile Python sources
+        run: python -m compileall -q src tests
