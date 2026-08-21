@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lock_minutes: int = 15
     cookie_secure: bool = True
-    allowed_hosts: str = "localhost,127.0.0.1"
+    allowed_hosts: str = "localhost,127.0.0.1,testserver"
     cors_origins: str = "http://localhost:3000"
 
     def validate_production_secrets(self) -> None:
