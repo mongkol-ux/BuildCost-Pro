@@ -9,13 +9,12 @@ export type CostCategoryType = 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | 'SUBCONTRACT
 export class Money {
   private constructor(readonly amount: number, readonly currency = 'THB') {
     if (!Number.isFinite(amount)) throw new Error('Money amount must be finite');
-    if (amount < 0) throw new Error('Money amount cannot be negative');
   }
 
   static zero(currency = 'THB'): Money { return new Money(0, currency); }
   static of(amount: number, currency = 'THB'): Money { return new Money(Math.round(amount * 100) / 100, currency); }
   add(other: Money): Money { this.assertCurrency(other); return Money.of(this.amount + other.amount, this.currency); }
-  subtract(other: Money): Money { this.assertCurrency(other); if (this.amount < other.amount) throw new Error('Money result cannot be negative'); return Money.of(this.amount - other.amount, this.currency); }
+  subtract(other: Money): Money { this.assertCurrency(other); return Money.of(this.amount - other.amount, this.currency); }
   multiply(quantity: number): Money { if (!Number.isFinite(quantity) || quantity < 0) throw new Error('Invalid quantity'); return Money.of(this.amount * quantity, this.currency); }
   isZero(): boolean { return this.amount === 0; }
   private assertCurrency(other: Money): void { if (this.currency !== other.currency) throw new Error('Currency mismatch'); }
@@ -39,6 +38,7 @@ export class CostLine {
   constructor(props: CostLineProps) {
     if (!props.description.trim()) throw new Error('Cost line description is required');
     if (!Number.isFinite(props.quantity) || props.quantity <= 0) throw new Error('Cost line quantity must be greater than zero');
+    if (props.unitPrice.amount < 0) throw new Error('Cost line unit price cannot be negative');
     this.id = props.id; this.categoryId = props.categoryId; this.description = props.description.trim();
     this.quantity = props.quantity; this.unitPrice = props.unitPrice;
   }
@@ -74,7 +74,6 @@ export class Project {
     if (this._status === 'COMPLETED' || this._status === 'CANCELLED') throw new Error('Closed project cannot be activated');
     this._status = 'ACTIVE';
   }
-
   hold(): void { if (this._status !== 'ACTIVE') throw new Error('Only active project can be put on hold'); this._status = 'ON_HOLD'; }
   complete(): void { if (this._status !== 'ACTIVE' && this._status !== 'ON_HOLD') throw new Error('Project must be active or on hold'); this._status = 'COMPLETED'; }
   cancel(): void { if (this._status === 'COMPLETED') throw new Error('Completed project cannot be cancelled'); this._status = 'CANCELLED'; }
@@ -106,29 +105,25 @@ export class TransactionAggregate {
     if (this._status !== 'DRAFT') throw new Error('Only draft transaction can be edited');
     this.lines.push(item);
   }
-
   removeItem(itemId: UUID): void {
     if (this._status !== 'DRAFT') throw new Error('Only draft transaction can be edited');
     const index = this.lines.findIndex((x) => x.id === itemId);
     if (index < 0) throw new Error('Transaction item not found');
     this.lines.splice(index, 1);
   }
-
   setTax(amount: Money): void {
     if (this._status !== 'DRAFT') throw new Error('Only draft transaction can be edited');
+    if (amount.amount < 0) throw new Error('Tax amount cannot be negative');
     this._taxAmount = amount;
   }
-
   get subtotal(): Money { return this.lines.reduce((sum, line) => sum.add(line.amount), Money.zero()); }
   get taxAmount(): Money { return this._taxAmount; }
   get totalAmount(): Money { return this.subtotal.add(this._taxAmount); }
-
   post(): void {
     if (this._status !== 'DRAFT') throw new Error('Only draft transaction can be posted');
     if (this.lines.length === 0) throw new Error('Transaction must contain at least one item');
     this._status = 'POSTED';
   }
-
   void(): void { if (this._status !== 'POSTED') throw new Error('Only posted transaction can be voided'); this._status = 'VOIDED'; }
 }
 
@@ -144,9 +139,7 @@ export class ProjectFinancials {
   static profit(snapshot: ProjectFinancialSnapshot): Money {
     return snapshot.income.subtract(snapshot.expense);
   }
-
   static budgetVariance(snapshot: ProjectFinancialSnapshot): Money {
-    if (snapshot.actualCost.amount >= snapshot.budget.amount) return Money.zero(snapshot.budget.currency);
     return snapshot.budget.subtract(snapshot.actualCost);
   }
 }
