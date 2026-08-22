@@ -20,7 +20,12 @@ async def security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/auth") else "no-cache"
-    if settings.environment == "production":
+
+    # Railway terminates TLS at the public proxy. Honor the forwarded HTTPS
+    # scheme so HSTS is emitted for the real public HTTPS connection even when
+    # the container itself receives plain HTTP from the proxy.
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
+    if settings.environment == "production" or forwarded_proto == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
