@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
       - name: Apply production schema
-        run: python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); c.execute(text(open('migrations/001_authentication.sql').read())); c.commit(); c.close()"
+        run: python -m src.migrate
       - name: Validate application import
         run: python -c "from src.main import app; from src.config import get_settings; assert app.title == get_settings().app_name"
       - name: Run unit and integration tests
@@ -85,8 +85,6 @@ jobs:
           }, body
           print('HEALTH_CONTRACT=PASS')
 
-          # The pull-request gate validates the new security behavior locally.
-          # The main-branch gate validates that the deployed public runtime has it.
           if os.environ.get('GITHUB_REF') != 'refs/heads/main':
               print('PUBLIC_HEALTH_SMOKE=PASS')
               print('SECURITY_HEADERS_LOCAL_CI=PASS')
