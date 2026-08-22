@@ -1,4 +1,5 @@
 """Runtime configuration for the authentication boundary."""
+import os
 from functools import lru_cache
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,10 +21,19 @@ class Settings(BaseSettings):
     login_lock_minutes: int = 15
     cookie_secure: bool = True
     # Railway healthchecks originate from healthcheck.railway.app.
-    # The wildcard also permits Railway-provided *.up.railway.app domains.
-    # BUILD_COST_ALLOWED_HOSTS can override this list for custom production hosts.
+    # In production, these mandatory Railway hosts are always retained even
+    # when BUILD_COST_ALLOWED_HOSTS is supplied as an override.
     allowed_hosts: str = "localhost,127.0.0.1,testserver,healthcheck.railway.app,*.up.railway.app"
     cors_origins: str = "http://localhost:3000"
+
+    def get_allowed_hosts(self) -> list[str]:
+        hosts = {h.strip() for h in self.allowed_hosts.split(",") if h.strip()}
+        if self.environment == "production":
+            hosts.update({"healthcheck.railway.app", "*.up.railway.app"})
+            railway_public_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+            if railway_public_domain:
+                hosts.add(railway_public_domain)
+        return sorted(hosts)
 
     def validate_production_secrets(self) -> None:
         if self.environment == "production":

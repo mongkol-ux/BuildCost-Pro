@@ -22,7 +22,7 @@ app = FastAPI(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=[h.strip() for h in settings.allowed_hosts.split(",") if h.strip()],
+    allowed_hosts=settings.get_allowed_hosts(),
 )
 app.add_middleware(
     CORSMiddleware,
