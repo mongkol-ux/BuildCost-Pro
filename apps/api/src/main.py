@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .auth_router import router as auth_router
 from .config import get_settings
+from .core_router import router as core_router
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="1.0.0", docs_url="/docs", redoc_url="/redoc")
@@ -20,10 +21,6 @@ async def security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/auth") else "no-cache"
-
-    # Railway terminates TLS at the public proxy. Honor the forwarded HTTPS
-    # scheme so HSTS is emitted for the real public HTTPS connection even when
-    # the container itself receives plain HTTP from the proxy.
     forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
     if settings.environment == "production" or forwarded_proto == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -36,3 +33,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(auth_router)
+app.include_router(core_router)

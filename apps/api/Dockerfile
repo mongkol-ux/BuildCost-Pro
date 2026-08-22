@@ -15,4 +15,4 @@ COPY migrations ./migrations
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "python -m src.migrate && uvicorn src.main:app --host 0.0.0.0 --port ${PORT}"]
