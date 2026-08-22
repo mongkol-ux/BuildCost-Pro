@@ -19,7 +19,11 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lock_minutes: int = 15
     cookie_secure: bool = True
-    allowed_hosts: str = "localhost,127.0.0.1,testserver"
+    # Railway healthchecks originate from healthcheck.railway.app.
+    # Keep the platform healthcheck hostname allowed by default; production
+    # deployments can override BUILD_COST_ALLOWED_HOSTS with their own hosts
+    # while retaining healthcheck.railway.app.
+    allowed_hosts: str = "localhost,127.0.0.1,testserver,healthcheck.railway.app"
     cors_origins: str = "http://localhost:3000"
 
     def validate_production_secrets(self) -> None:
