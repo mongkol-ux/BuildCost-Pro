@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from .core_calculations import summarize
 from .core_models import Budget, Cost, Project, Transaction
 
 
@@ -106,13 +107,4 @@ def project_summary(db: Session, project_id: str, user_id: str, role: str) -> di
     income = tx_total("INCOME")
     expense = tx_total("EXPENSE")
     adjustment = tx_total("ADJUSTMENT")
-    return {
-        "project_id": project_id,
-        "budget_total": budget_total,
-        "cost_total": cost_total,
-        "income_total": income,
-        "expense_total": expense,
-        "adjustment_total": adjustment,
-        "balance": income - expense + adjustment,
-        "budget_remaining": budget_total - cost_total,
-    }
+    return {"project_id": project_id, **summarize(budget_total, cost_total, income, expense, adjustment)}
