@@ -31,9 +31,6 @@ class Settings(BaseSettings):
                 raise ValueError("BUILD_COST_JWT_SECRET must be replaced in production")
             if len(self.jwt_secret) < 32:
                 raise ValueError("BUILD_COST_JWT_SECRET must be at least 32 characters in production")
-            origins = {origin.strip() for origin in self.cors_origins.split(",") if origin.strip()}
-            if not origins or origins == {"http://localhost:3000"}:
-                raise ValueError("BUILD_COST_CORS_ORIGINS must contain the production frontend origin")
             if not self.cookie_secure:
                 raise ValueError("BUILD_COST_COOKIE_SECURE must remain enabled in production")
 
