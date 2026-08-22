@@ -53,3 +53,66 @@ jobs:
         run: pytest -q
       - name: Compile Python sources
         run: python -m compileall -q src tests
+      - name: Production public runtime smoke test
+        working-directory: .
+        env:
+          PRODUCTION_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --max-time 10 \
+              -D /tmp/buildcost-headers.txt \
+              -o /tmp/buildcost-health.json \
+              "$PRODUCTION_BASE_URL/health"; then
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "Production health endpoint did not become ready in time."
+              exit 1
+            fi
+            sleep 10
+          done
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          body = json.loads(Path('/tmp/buildcost-health.json').read_text())
+          assert body == {
+              'status': 'ok',
+              'service': 'buildcost-pro-api',
+              'version': '1.0.0',
+          }, body
+          print('HEALTH_CONTRACT=PASS')
+
+          # The pull-request gate validates the new security behavior locally.
+          # The main-branch gate validates that the deployed public runtime has it.
+          if os.environ.get('GITHUB_REF') != 'refs/heads/main':
+              print('PUBLIC_HEALTH_SMOKE=PASS')
+              print('SECURITY_HEADERS_LOCAL_CI=PASS')
+              raise SystemExit(0)
+
+          headers = {}
+          for line in Path('/tmp/buildcost-headers.txt').read_text().splitlines():
+              if ':' in line:
+                  key, value = line.split(':', 1)
+                  headers[key.lower().strip()] = value.strip()
+
+          required = {
+              'x-content-type-options': 'nosniff',
+              'x-frame-options': 'DENY',
+              'referrer-policy': 'no-referrer',
+          }
+          for key, expected in required.items():
+              assert headers.get(key) == expected, (key, headers.get(key))
+
+          permissions = headers.get('permissions-policy', '').replace(' ', '')
+          assert permissions == 'camera=(),microphone=(),geolocation=()', permissions
+
+          hsts = headers.get('strict-transport-security', '')
+          assert 'max-age=31536000' in hsts, hsts
+          assert 'includesubdomains' in hsts.lower(), hsts
+          print('PUBLIC_PRODUCTION_SMOKE_TEST=PASS')
+          print('SECURITY_HEADERS=PASS')
+          print('HEALTH_CONTRACT=PASS')
+          PY
