@@ -1,0 +1,58 @@
+name: Production Operations Health Monitor
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  production-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public production health
+        env:
+          PRODUCTION_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 \
+            -D /tmp/headers.txt \
+            -o /tmp/health.json \
+            "$PRODUCTION_BASE_URL/health"
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          body = json.loads(Path('/tmp/health.json').read_text())
+          expected = {
+              'status': 'ok',
+              'service': 'buildcost-pro-api',
+              'version': '1.0.0',
+          }
+          assert body == expected, body
+
+          headers = {}
+          for line in Path('/tmp/headers.txt').read_text().splitlines():
+              if ':' in line:
+                  key, value = line.split(':', 1)
+                  headers[key.lower().strip()] = value.strip()
+
+          required = {
+              'x-content-type-options': 'nosniff',
+              'x-frame-options': 'DENY',
+              'referrer-policy': 'no-referrer',
+          }
+          for key, expected_value in required.items():
+              assert headers.get(key) == expected_value, (key, headers.get(key))
+
+          permissions = headers.get('permissions-policy', '').replace(' ', '')
+          assert permissions == 'camera=(),microphone=(),geolocation=()', permissions
+
+          hsts = headers.get('strict-transport-security', '')
+          assert 'max-age=31536000' in hsts, hsts
+          assert 'includesubdomains' in hsts.lower(), hsts
+
+          print('PRODUCTION_HEALTH=PASS')
+          print('SECURITY_HEADERS=PASS')
+          print('HSTS=PASS')
+          PY
