@@ -4,11 +4,14 @@ from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
+from .auth_models import Base
 
-class CoreBase(DeclarativeBase):
-    pass
+# Keep a single SQLAlchemy metadata registry for authentication and core models.
+# Core projects reference users.id, so the users table must be present in the
+# same metadata collection for ORM foreign-key resolution.
+CoreBase = Base
 
 
 class Project(CoreBase):

@@ -26,8 +26,13 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
 
     def validate_production_secrets(self) -> None:
-        if self.environment == "production" and self.jwt_secret.startswith("dev-only-"):
-            raise ValueError("BUILD_COST_JWT_SECRET must be replaced in production")
+        if self.environment == "production":
+            if self.jwt_secret.startswith("dev-only-"):
+                raise ValueError("BUILD_COST_JWT_SECRET must be replaced in production")
+            if len(self.jwt_secret) < 32:
+                raise ValueError("BUILD_COST_JWT_SECRET must be at least 32 characters in production")
+            if not self.cookie_secure:
+                raise ValueError("BUILD_COST_COOKIE_SECURE must remain enabled in production")
 
 
 @lru_cache

@@ -8,10 +8,14 @@ WORKDIR /app
 
 COPY apps/api/requirements.txt ./apps/api/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r apps/api/requirements.txt
+    && pip install --no-cache-dir -r apps/api/requirements.txt \
+    && useradd --create-home --uid 10001 appuser
 
 COPY apps/api/src ./apps/api/src
 COPY apps/api/migrations ./apps/api/migrations
+
+RUN chown -R appuser:appuser /app
+USER appuser
 
 WORKDIR /app/apps/api
 
