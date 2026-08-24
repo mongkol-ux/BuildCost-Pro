@@ -1,6 +1,9 @@
 name: Production Container Build
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     tags:
       - 'v*.*.*'
@@ -11,22 +14,15 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  container-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push API image
+      - name: Build production Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./apps/api
-          push: true
+          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
           tags: ghcr.io/${{ github.repository_owner }}/buildcost-pro-api:${{ github.sha }}
