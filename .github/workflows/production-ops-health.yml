@@ -12,7 +12,7 @@ jobs:
   production-health:
     runs-on: ubuntu-latest
     steps:
-      - name: Check public production web health
+      - name: Check public production API health
         env:
           PRODUCTION_BASE_URL: https://buildcost-pro-production.up.railway.app
         run: |
@@ -20,7 +20,7 @@ jobs:
           curl --fail --silent --show-error --max-time 15 \
             -D /tmp/headers.txt \
             -o /tmp/health.json \
-            "$PRODUCTION_BASE_URL/api/health"
+            "$PRODUCTION_BASE_URL/health"
 
           python - <<'PY'
           import json
@@ -29,8 +29,8 @@ jobs:
           body = json.loads(Path('/tmp/health.json').read_text())
           expected = {
               'status': 'ok',
-              'service': 'buildcost-pro-web',
-              'version': '1.1.0',
+              'service': 'buildcost-pro-api',
+              'version': '1.0.0',
           }
           assert body == expected, body
 
@@ -55,7 +55,7 @@ jobs:
           assert 'max-age=31536000' in hsts, hsts
           assert 'includesubdomains' in hsts.lower(), hsts
 
-          print('PRODUCTION_WEB_HEALTH=PASS')
+          print('PRODUCTION_API_HEALTH=PASS')
           print('SECURITY_HEADERS=PASS')
           print('HSTS=PASS')
           PY
