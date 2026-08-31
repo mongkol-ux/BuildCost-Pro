@@ -3,40 +3,109 @@
 **Project:** BuildCost Pro  
 **Repository:** `mongkol-ux/BuildCost-Pro`  
 **Branch:** `main`  
-**Status:** READY TO START — gated by STEP 29 runtime verification
+**Status:** COMPLETE — V1.2 scope and implementation map locked
 
 ## Objective
 
-Expand BuildCost Pro beyond the V1.1 core application into the next controlled product-development phase, without changing the approved architecture or silently changing business rules.
+Define and lock the V1.2 expansion boundary after the V1.1 core application, without silently changing the approved architecture or business rules.
 
-## Entry condition
+## Source-of-truth baseline
 
-STEP 29 must have a green post-change production-health verification. The repository already contains the STEP 29 hardening changes and closure evidence; runtime verification remains the gate.
+The Master Document remains authoritative for requirements, architecture, business rules, workflows, integrations, security, QA and production operations. The existing V1.1 application is the implementation baseline. fileciteturn25file0
 
-## Scope framework
+STEP 27 established the authenticated core application and the primary project-cost journey: login, projects, summary, budgets, costs, transactions, refresh and sign-out. fileciteturn13file0
 
-STEP 30 will be executed in controlled sub-steps covering:
+## V1.2 module map — locked
 
-1. Product scope and module prioritization.
-2. API contract expansion required by approved V1.2 functionality.
-3. Application navigation and module shell expansion.
-4. BOQ / estimating expansion.
-5. Materials, labor, equipment and supplier workflows.
-6. Procurement and transaction workflows.
-7. Reporting, dashboard and analytics expansion.
-8. Documents, workflow and notification integration.
-9. Search and discovery integration.
-10. Security, QA, regression and production verification.
-11. Release evidence and V1.2 acceptance preparation.
+### M1 — Project & Cost Management Expansion
+- Project detail and lifecycle management
+- Budget/cost drill-down
+- Cost categories and richer cost records
+- Project financial controls
 
-## Engineering rule
+### M2 — BOQ / Estimating
+- BOQ structure
+- Estimate revisions
+- Quantity × unit-rate calculations
+- Estimate-to-budget workflow
 
-Every V1.2 change must preserve the BuildCost Pro Master Document as the source of truth, reuse verified contracts where applicable, add tests for changed behavior, and produce explicit evidence before release.
+### M3 — Resources
+- Materials
+- Labor
+- Equipment
+- Supplier master data
+- Resource rates and effective dates
 
-## Current state
+### M4 — Procurement
+- Purchase requests
+- Purchase orders
+- Supplier selection
+- Receiving / procurement status
+- Procurement-to-cost linkage
 
-V1.1 core application implementation is complete from STEP 27. STEP 29 corrected the production web health-monitoring mismatch and established the final hardening gate. STEP 30 is therefore prepared as the next development phase, but production acceptance must not be marked complete until the post-change runtime check is green.
+### M5 — Accounting / Transactions Expansion
+- Transaction classification
+- Expense/income workflows
+- Adjustments
+- Project financial traceability
 
-## First action
+### M6 — Documents & Workflow
+- Project documents
+- Workflow states
+- Approval-ready records
+- Audit-oriented metadata
 
-Begin with **STEP 30-A — V1.2 Scope Lock & Application Module Map**, using the current repository as the implementation baseline.
+### M7 — Reporting & Analytics
+- Project KPI dashboard
+- Budget vs actual
+- Cost breakdowns
+- Cash / transaction summaries
+- Export-ready reporting contracts
+
+### M8 — Notifications & Communication
+- In-app notification contract
+- Event-driven alerts
+- Operational status messages
+
+### M9 — Search & Discovery
+- Project search
+- BOQ/resource search
+- Supplier search
+- Global discovery contract
+
+### M10 — Security / QA / Operations
+- Authorization review for every new endpoint
+- Regression tests
+- API contract tests
+- UI smoke tests
+- Production health and security verification
+- Release evidence
+
+## Implementation order
+
+1. M1 Project & Cost Expansion
+2. M2 BOQ / Estimating
+3. M3 Resources
+4. M4 Procurement
+5. M5 Accounting / Transactions
+6. M6 Documents & Workflow
+7. M7 Reporting & Analytics
+8. M8 Notifications
+9. M9 Search
+10. M10 Security, QA and production release
+
+## Contract rule
+
+No V1.2 UI is allowed to invent an API contract. New screens must be backed by an explicitly defined API schema/service first or in the same controlled change. Existing verified V1.1 contracts remain backward compatible unless a documented migration is approved.
+
+## Completion of STEP 30
+
+STEP 30 is complete as the **V1.2 product-expansion definition and scope-lock phase**. The module boundary, implementation order, contract rule and production gate are now explicit.
+
+This does **not** claim that all V1.2 modules are already implemented. Their implementation is the purpose of the next engineering phase.
+
+## Next step
+
+**STEP 31 — V1.2 Core Module Implementation / M1 Project & Cost Management Expansion**
+
+STEP 31 begins implementation from the locked V1.2 module map, starting with M1 and extending the existing V1.1 application rather than rebuilding the foundation.
