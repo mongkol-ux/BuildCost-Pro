@@ -58,3 +58,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build production Docker image
         run: docker build -t buildcost-pro-api:ci .
+
+# STEP 37 gate: API CI intentionally remains independently runnable for final verification.
