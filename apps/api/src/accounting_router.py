@@ -2,14 +2,30 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from .auth_models import User
 from .auth_router import current_user, db_session
-from .accounting_schemas import FinancialPeriodCreate, FinancialPeriodResponse, PaymentCreate, PaymentResponse, RetentionCreate, RetentionResponse, ReconciliationCreate, ReconciliationResponse
-from .accounting_service import close_period, create_payment, create_period, create_retention, list_payments, list_periods, list_retentions, reconcile
+from .accounting_schemas import AccountingTransactionCreate, AccountingTransactionResponse, FinancialPeriodCreate, FinancialPeriodResponse, PaymentCreate, PaymentResponse, RetentionCreate, RetentionResponse, ReconciliationCreate, ReconciliationResponse
+from .accounting_service import close_period, create_accounting_transaction, create_payment, create_period, create_retention, list_payments, list_periods, list_retentions, reconcile
 
 router = APIRouter(prefix="/api/v1", tags=["accounting"])
 
 
 def actor(user: User):
     return user.id, user.role
+
+
+@router.get("/projects/{project_id}/accounting-transactions", response_model=list[AccountingTransactionResponse])
+def accounting_transactions(project_id: str, user: User = Depends(current_user), db: Session = Depends(db_session)):
+    uid, role = actor(user)
+    from .core_models import Transaction
+    from sqlalchemy import select
+    from .accounting_service import _project
+    _project(db, project_id, uid, role)
+    return list(db.scalars(select(Transaction).where(Transaction.project_id == project_id).order_by(Transaction.occurred_at.desc())).all())
+
+
+@router.post("/projects/{project_id}/accounting-transactions", response_model=AccountingTransactionResponse, status_code=status.HTTP_201_CREATED)
+def accounting_transaction_create(project_id: str, body: AccountingTransactionCreate, user: User = Depends(current_user), db: Session = Depends(db_session)):
+    uid, role = actor(user)
+    return create_accounting_transaction(db, project_id, uid, role, body.model_dump())
 
 
 @router.get("/projects/{project_id}/financial-periods", response_model=list[FinancialPeriodResponse])
