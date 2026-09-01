@@ -4,9 +4,7 @@
 
 ## Purpose
 
-Close the V1.2 release only when its production evidence, operational ownership,
-backup/restore readiness, and release record are complete. This handover does
-not add product scope and must not bypass a failed release gate.
+Close the V1.2 release only when its production evidence, operational ownership, backup/restore readiness, and release record are complete. This handover does not add product scope and must not bypass a failed release gate.
 
 ## Confirmed release evidence
 
