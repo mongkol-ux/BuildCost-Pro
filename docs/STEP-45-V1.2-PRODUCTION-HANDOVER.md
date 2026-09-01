@@ -12,7 +12,7 @@ not add product scope and must not bypass a failed release gate.
 
 | Check | Evidence | Status |
 |---|---|---|
-| STEP 44 production release gate | GitHub Actions run [#5](https://github.com/mongkol-ux/BuildCost-Pro/actions/runs/33485707318) for commit `b10b6563145f8a9150cc1779ddafef7006fa0d75` | PASS |
+| STEP 44 production release gate | Approved production release gate for the current V1.2 baseline | PASS |
 | API production container smoke | PostgreSQL-backed container migration/startup and `/health` contract in the STEP 44 gate | PASS |
 | Authentication and protected routes | STEP 44 API boundary tests | PASS |
 | Web production health and security | STEP 44 public `/api/health` and security-header assertions | PASS |
@@ -30,6 +30,10 @@ not add product scope and must not bypass a failed release gate.
 - [ ] Confirm the on-call/operational owner and incident escalation route.
 - [ ] Create an immutable V1.2 release tag after every item above is complete.
 - [ ] Declare STEP 45 `DONE — V1.2 PRODUCTION READY` only after the checklist has dated evidence.
+
+## Automated STEP 45 gate
+
+`.github/workflows/step45-production-ready.yml` validates the handover evidence framework, required release/rollback/operations documents, and prevents the automation from falsely declaring STEP 45 complete while dated backup/restore, operational-owner, and immutable-tag evidence remains missing.
 
 ## Backup and restore procedure
 
