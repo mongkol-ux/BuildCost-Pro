@@ -31,3 +31,21 @@ def test_wrong_secret_rejected(monkeypatch):
     get_settings.cache_clear()
     with pytest.raises(jwt.InvalidTokenError):
         decode_access_token(token)
+
+
+def test_production_rejects_development_secret(monkeypatch):
+    monkeypatch.setenv("BUILD_COST_ENVIRONMENT", "production")
+    monkeypatch.setenv("BUILD_COST_JWT_SECRET", "dev-only-change-this-secret-before-production-32")
+    monkeypatch.setenv("BUILD_COST_CORS_ORIGINS", "https://app.example.com")
+    from src.config import Settings
+    with pytest.raises(ValueError, match="JWT_SECRET"):
+        Settings().validate_production_secrets()
+
+
+def test_production_rejects_insecure_cors(monkeypatch):
+    monkeypatch.setenv("BUILD_COST_ENVIRONMENT", "production")
+    monkeypatch.setenv("BUILD_COST_JWT_SECRET", "production-secret-that-is-long-enough-123456")
+    monkeypatch.setenv("BUILD_COST_CORS_ORIGINS", "*")
+    from src.config import Settings
+    with pytest.raises(ValueError, match="CORS_ORIGINS"):
+        Settings().validate_production_secrets()
