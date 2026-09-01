@@ -20,7 +20,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 39 | Search | DONE — FINAL GATE PASSED |
 | 40 | Security / QA / Ops | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 41 | Cross-module integration | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 42 | Full QA / UAT | IMPLEMENTATION QUEUED |
+| 42 | Full QA / UAT | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 43 | Release Candidate | IMPLEMENTATION QUEUED |
 | 44 | Production Release | IMPLEMENTATION QUEUED |
 | 45 | V1.2 Production Ready | IMPLEMENTATION QUEUED |
@@ -34,6 +34,14 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 42 evidence
+
+STEP 42 implements the full QA/UAT layer over the V1.2 system. Coverage includes financial reconciliation and integration invariants, authentication/permission boundary regression, API release-candidate validation, production runtime smoke validation, and a repeatable UAT acceptance checklist.
+
+Implementation artifacts include `apps/api/tests/test_step42_full_qa_uat.py` and `docs/STEP-42-FULL-QA-UAT-GATE.md`. The new QA test verifies budget/cost/accounting reconciliation, integration-summary consistency, and rejection of cross-user project access.
+
+The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 42 must not be marked DONE until the final API CI, production release-candidate validation, and production operations health checks pass for the final QA/UAT commit.
 
 ## STEP 41 evidence
 
