@@ -1,0 +1,100 @@
+name: STEP 46 Production App Packaging
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'apps/api/**'
+      - 'Dockerfile'
+      - 'apps/web/railway.toml'
+      - 'apps/api/railway.toml'
+      - '.github/workflows/step46-production-packaging.yml'
+      - 'docs/STEP-46-PRODUCTION-APP-PACKAGING.md'
+      - 'docs/IMPLEMENTATION-STATUS-31-55.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  production-packaging:
+    name: STEP 46 production packaging gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Verify packaging inputs
+        run: |
+          set -euo pipefail
+          test -f Dockerfile
+          test -f apps/api/Dockerfile
+          test -f apps/api/railway.toml
+          test -f apps/web/package.json
+          test -f apps/web/railway.toml
+          test -f docs/STEP-46-PRODUCTION-APP-PACKAGING.md
+          echo 'PACKAGING_INPUTS=PASS'
+
+      - name: Build production web package
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          npm install
+          npm run build
+          test -d .next
+          echo 'WEB_PRODUCTION_BUILD=PASS'
+
+      - name: Validate production web start contract
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          node -e "const p=require('./package.json'); if(!p.scripts || p.scripts.build!=='next build' || p.scripts.start!=='next start') process.exit(1)"
+          grep -F 'healthcheckPath = "/api/health"' railway.toml
+          echo 'WEB_START_CONTRACT=PASS'
+
+      - name: Build production API package
+        working-directory: apps/api
+        run: |
+          set -euo pipefail
+          docker build --pull -t buildcost-pro-api:step46 .
+          docker image inspect buildcost-pro-api:step46 >/dev/null
+          echo 'API_CONTAINER_PACKAGE=PASS'
+
+      - name: Validate API runtime contract
+        working-directory: apps/api
+        run: |
+          set -euo pipefail
+          grep -F 'healthcheckPath = "/health"' railway.toml
+          grep -F 'python -m src.migrate && uvicorn src.main:app' Dockerfile
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m compileall -q src tests
+          python -c "from src.main import app; assert app.title"
+          echo 'API_RUNTIME_CONTRACT=PASS'
+
+      - name: Package production evidence bundle
+        run: |
+          set -euo pipefail
+          mkdir -p step46-package
+          cp -r apps/web/.next step46-package/web-next
+          cp apps/web/package.json apps/web/railway.toml step46-package/
+          cp apps/api/Dockerfile apps/api/railway.toml step46-package/
+          cp Dockerfile step46-package/root-Dockerfile
+          cp docs/STEP-46-PRODUCTION-APP-PACKAGING.md step46-package/
+          tar -czf step46-production-package.tgz -C step46-package .
+          test -s step46-production-package.tgz
+          echo 'PRODUCTION_PACKAGE_BUNDLE=PASS'
+
+      - name: Upload STEP 46 package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: step46-production-package
+          path: step46-production-package.tgz
+          if-no-files-found: error
+
+      - name: STEP 46 gate result
+        run: |
+          echo 'STEP 46 Production App Packaging: PASS'
+          echo 'Production web build, API container package, runtime contracts, and evidence bundle verified.'
