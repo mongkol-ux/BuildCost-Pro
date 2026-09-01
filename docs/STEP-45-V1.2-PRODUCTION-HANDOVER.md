@@ -37,20 +37,12 @@ not add product scope and must not bypass a failed release gate.
 
 ## Backup and restore procedure
 
-1. Before a release, verify that the production PostgreSQL platform reports a
-   current successful backup and record its identifier and timestamp.
-2. Restore that backup into an isolated, non-production PostgreSQL instance;
-   never rehearse a restore over the live database.
-3. Run the checked-in migration chain against the restored copy. It must finish
-   without errors and expose the required schema tables.
-4. Start the release API against the restored copy using production-safe
-   configuration, then verify `/health` and one authenticated, read-only route.
-5. Record the evidence in the release record. If any check fails, stop release
-   closure and use the STEP 43 rollback policy; do not attempt destructive
-   recovery on the live database.
+1. Before a release, verify that the production PostgreSQL platform reports a current successful backup and record its identifier and timestamp.
+2. Restore that backup into an isolated, non-production PostgreSQL instance; never rehearse a restore over the live database.
+3. Run the checked-in migration chain against the restored copy. It must finish without errors and expose the required schema tables.
+4. Start the release API against the restored copy using production-safe configuration, then verify `/health` and one authenticated, read-only route.
+5. Record the evidence in the release record. If any check fails, stop release closure and use the STEP 43 rollback policy; do not attempt destructive recovery on the live database.
 
 ## Closure rule
 
-The successful STEP 44 run establishes deployability, but it is not evidence of
-a completed restore drill or release tag. Until those remaining controls are
-verified, STEP 45 remains **IN PROGRESS**.
+The successful STEP 44 run establishes deployability, but it is not evidence of a completed restore drill or release tag. Until those remaining controls are verified, STEP 45 remains **IN PROGRESS**.
