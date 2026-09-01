@@ -8,7 +8,9 @@ from .core_router import router as core_router
 from .resource_router import router as resource_router
 from .procurement_router import router as procurement_router
 from .accounting_router import router as accounting_router
+from .document_router import router as document_router
 from . import accounting_models  # noqa: F401 - register accounting ORM tables
+from . import document_models  # noqa: F401 - register document ORM tables
 
 settings = get_settings()
 docs_url = None if settings.environment == "production" else "/docs"
@@ -39,3 +41,4 @@ app.include_router(core_router)
 app.include_router(resource_router)
 app.include_router(procurement_router)
 app.include_router(accounting_router)
+app.include_router(document_router)
