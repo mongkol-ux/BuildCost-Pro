@@ -17,7 +17,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
 | 37 | Reporting & Dashboard | DONE — FINAL GATE PASSED |
 | 38 | Notifications | DONE — FINAL GATE PASSED |
-| 39 | Search | IMPLEMENTATION QUEUED |
+| 39 | Search | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 40 | Security / QA / Ops | IMPLEMENTATION QUEUED |
 | 41 | Cross-module integration | IMPLEMENTATION QUEUED |
 | 42 | Full QA / UAT | IMPLEMENTATION QUEUED |
@@ -34,6 +34,18 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 39 evidence
+
+STEP 39 implements M9 Search: global/project search, filter/project scope and pagination contracts, permission-aware project-owned results, search indexing support, protected API endpoint, and automated contract coverage.
+
+Implementation artifacts include `apps/api/src/search_schemas.py`, `search_service.py`, `search_router.py`, `apps/api/migrations/009_search.sql`, `apps/api/tests/test_step39_search.py`, and registration in `apps/api/src/main.py`.
+
+The protected endpoint is `GET /api/v1/search?q=<term>&project_id=<optional>&page=1&page_size=20`.
+
+Project-owned records are filtered to projects owned by the authenticated user. A supplied project filter is rejected by returning no results when the project is not owned by that user. Resource and supplier masters remain globally searchable because the current schema does not assign them to projects.
+
+Gate evidence is maintained in `docs/STEP-39-M9-SEARCH-GATE.md`. CI/production verification is intentionally still pending; STEP 39 must not be marked DONE until those gates pass.
 
 ## STEP 38 evidence
 
@@ -92,7 +104,7 @@ Gate evidence is maintained in `docs/STEP-35-M5-ACCOUNTING-FINANCIAL-CONTROLS-GA
 
 ## STEP 34 evidence
 
-STEP 34 implements M4 Procurement: purchase requests, request items, RFQ/quotation records and selection, purchase orders, commitment-ready PO totals, receiving quantities and PO receiving status lifecycle.
+STEP 34 implements M4 Procurement: purchase requests, RFQ/quotation records and selection, purchase orders, commitment-ready PO totals, receiving quantities and PO receiving status lifecycle.
 
 Gate evidence is maintained in `docs/STEP-34-M4-PROCUREMENT-GATE.md`.
 
