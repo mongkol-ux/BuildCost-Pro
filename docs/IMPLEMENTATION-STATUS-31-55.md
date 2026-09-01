@@ -22,8 +22,8 @@ The implementation phase may be written continuously before the dedicated test p
 | 41 | Cross-module integration | DONE — FINAL GATE PASSED |
 | 42 | Full QA / UAT | DONE — FINAL GATE PASSED |
 | 43 | Release Candidate | DONE — FINAL GATE PASSED |
-| 44 | Production Release | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 45 | V1.2 Production Ready | IMPLEMENTATION QUEUED |
+| 44 | Production Release | DONE — FINAL GATE PASSED |
+| 45 | V1.2 Production Ready | IN PROGRESS — HANDOVER EVIDENCE PENDING |
 | 46 | Production App Packaging | IMPLEMENTATION QUEUED |
 | 47 | Mobile App | IMPLEMENTATION QUEUED |
 | 48 | Final UX/UI | IMPLEMENTATION QUEUED |
@@ -43,9 +43,9 @@ The API production Dockerfile runs `python -m src.migrate` before starting uvico
 
 The rollback procedure remains the STEP 43 approved deployment rollback plan: identify the last known-good immutable release, roll back the application deployment, verify health/auth/protected routes, and use an approved restore/forward-fix path for database recovery where required.
 
-Implementation commit: `07ccfb4d5d2b334faeabb5fe1cd744537d4226f3` (`ci: add STEP 44 production release gate`).
+The final gate passed for commit `b10b6563145f8a9150cc1779ddafef7006fa0d75` via STEP 44 Production Release Gate run #5. Every required job step passed: Railway production status, deployment contract, PostgreSQL 16 migrations, application validation, API production container smoke, API authentication/protected-route boundaries, and public web health/security assertions.
 
-The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 44 must not be marked DONE until the production-release workflow and production operations health checks pass for the same release commit and release evidence is recorded.
+The current decision is **DONE — FINAL GATE PASSED**. STEP 45 handover evidence is tracked in `docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md`; it must establish the backup/restore drill and immutable release tag before V1.2 is declared production-ready.
 
 ## STEP 43 evidence
 
