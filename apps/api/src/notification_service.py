@@ -1,4 +1,5 @@
-from sqlalchemy import select, update
+from datetime import datetime, timezone
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .notification_models import Notification, NotificationPreference
 
@@ -14,25 +15,26 @@ def mark_read(db: Session, notification_id: str, user_id: str):
     notification = db.scalar(select(Notification).where(Notification.id == notification_id, Notification.user_id == user_id))
     if not notification:
         return None
-    notification.read_at = __import__('datetime').datetime.now(__import__('datetime').timezone.utc)
+    notification.read_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(notification)
     return notification
 
 
 def create_notification(db: Session, payload: dict):
-    pref = db.scalar(select(NotificationPreference).where(NotificationPreference.user_id == payload['user_id']))
+    pref = db.scalar(select(NotificationPreference).where(NotificationPreference.user_id == payload["user_id"]))
     if pref is None:
-        pref = NotificationPreference(user_id=payload['user_id'])
+        pref = NotificationPreference(user_id=payload["user_id"])
         db.add(pref)
         db.flush()
     if not pref.in_app_enabled:
+        db.rollback()
         return None
-    n = Notification(**payload)
-    db.add(n)
+    notification = Notification(**payload)
+    db.add(notification)
     db.commit()
-    db.refresh(n)
-    return n
+    db.refresh(notification)
+    return notification
 
 
 def get_or_create_preferences(db: Session, user_id: str):
