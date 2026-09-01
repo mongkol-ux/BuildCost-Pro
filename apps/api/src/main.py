@@ -1,4 +1,6 @@
 """BuildCost Pro API application and security boundary."""
+import logging
+import uuid
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -19,6 +21,7 @@ from . import resource_models  # noqa: F401 - register resource ORM tables
 from . import procurement_models  # noqa: F401 - register procurement ORM tables
 
 settings = get_settings()
+logger = logging.getLogger("buildcost_pro.security")
 docs_url = None if settings.environment == "production" else "/docs"
 redoc_url = None if settings.environment == "production" else "/redoc"
 app = FastAPI(title=settings.app_name, version="1.0.0", docs_url=docs_url, redoc_url=redoc_url)
@@ -27,15 +30,26 @@ app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in settings.co
 
 @app.middleware("http")
 async def security_headers(request, call_next):
-    response = await call_next(request)
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("unhandled_request_error method=%s path=%s request_id=%s", request.method, request.url.path, request_id)
+        raise
+    response.headers["X-Request-ID"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/auth") else "no-cache"
     forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
     if settings.environment == "production" or forwarded_proto == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    if response.status_code >= 400 and request.url.path != "/health":
+        logger.warning("security_http_event status=%s method=%s path=%s request_id=%s", response.status_code, request.method, request.url.path, request_id)
     return response
 
 @app.get("/health", tags=["system"])
