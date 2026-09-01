@@ -24,7 +24,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 43 | Release Candidate | DONE — FINAL GATE PASSED |
 | 44 | Production Release | DONE — FINAL GATE PASSED |
 | 45 | V1.2 Production Ready | IN PROGRESS — HANDOVER EVIDENCE PENDING |
-| 46 | Production App Packaging | IMPLEMENTATION QUEUED |
+| 46 | Production App Packaging | IMPLEMENTED — GATE PENDING CI/RE-TEST |
 | 47 | Mobile App | IMPLEMENTATION QUEUED |
 | 48 | Final UX/UI | IMPLEMENTATION QUEUED |
 | 49 | Real User UAT | IMPLEMENTATION QUEUED |
@@ -42,6 +42,14 @@ STEP 45 is the V1.2 production handover gate. STEP 44 established deployability 
 The dedicated automated evidence gate is `.github/workflows/step45-production-ready.yml`. It validates the handover evidence framework, required release/rollback/operations documents, and intentionally blocks false completion while backup/restore, operational-owner, and immutable-tag evidence remains outstanding.
 
 The handover record is maintained in `docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md`. Required closure evidence remains: PostgreSQL backup owner/schedule/retention/location; isolated non-production restore drill with backup identifier, target, timestamps, result and verifier; restored DB migration/schema and protected read-only API verification; on-call/incident escalation owner; and immutable V1.2 release tag.
+
+## STEP 46 evidence
+
+STEP 46 establishes repeatable production packaging for the Web and API applications. The dedicated workflow is `.github/workflows/step46-production-packaging.yml`.
+
+The gate validates packaging inputs, builds the Next.js production bundle, builds the production API container, checks Web/API Railway healthcheck and runtime contracts, and uploads a `step46-production-package` evidence artifact.
+
+STEP 46 remains `IMPLEMENTED — GATE PENDING CI/RE-TEST` until the dedicated workflow completes successfully.
 
 ## Gate rule
 
