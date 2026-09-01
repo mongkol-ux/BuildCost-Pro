@@ -15,7 +15,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 34 | Procurement | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 35 | Accounting & Financial Controls | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
-| 37 | Reporting & Dashboard | IMPLEMENTATION QUEUED |
+| 37 | Reporting & Dashboard | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 38 | Notifications | IMPLEMENTATION QUEUED |
 | 39 | Search | IMPLEMENTATION QUEUED |
 | 40 | Security / QA / Ops | IMPLEMENTATION QUEUED |
@@ -34,6 +34,16 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 37 evidence
+
+STEP 37 implements M7 Reporting & Dashboard: project financial KPI aggregation, budget vs actual, commitment vs actual, BOQ totals/item count, cost-by-category reporting, accounting income/expense/balance, protected report API endpoints, CSV export endpoint, reporting dashboard UI, and business/contract coverage.
+
+Implementation artifacts are `apps/api/src/reporting_schemas.py`, `reporting_service.py`, `reporting_router.py`, `apps/api/tests/test_reporting_business.py`, and `apps/web/app/reports/page.tsx`. The reporting router is wired into `apps/api/src/main.py`.
+
+Final implementation commit at this stage: `2b7b35cda1757845b7a9a401187448c8ace4abfd` (`feat: add STEP 37 reporting dashboard UI`).
+
+Gate status: implementation complete; CI/Production verification pending. STEP 37 is not DONE until API CI, Web CI, Production Release Candidate validation, Production Operations Health and gate documentation all pass.
 
 ## STEP 36 evidence
 
