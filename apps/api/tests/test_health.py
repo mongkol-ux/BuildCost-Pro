@@ -16,6 +16,25 @@ def test_health() -> None:
     }
 
 
+def test_security_headers_are_emitted() -> None:
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "no-referrer"
+    assert response.headers["permissions-policy"] == "camera=(), microphone=(), geolocation=()"
+    assert response.headers["cross-origin-resource-policy"] == "same-origin"
+    assert response.headers["x-permitted-cross-domain-policies"] == "none"
+    assert response.headers["content-security-policy"] == "default-src 'none'; frame-ancestors 'none'"
+    assert response.headers["x-request-id"]
+
+
+def test_request_id_is_preserved_when_supplied() -> None:
+    response = client.get("/health", headers={"x-request-id": "step40-test-request"})
+    assert response.status_code == 200
+    assert response.headers["x-request-id"] == "step40-test-request"
+
+
 def test_hsts_is_emitted_for_public_https_proxy() -> None:
     response = client.get("/health", headers={"x-forwarded-proto": "https"})
     assert response.status_code == 200
