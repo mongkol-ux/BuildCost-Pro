@@ -16,7 +16,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 35 | Accounting & Financial Controls | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
 | 37 | Reporting & Dashboard | DONE — FINAL GATE PASSED |
-| 38 | Notifications | IMPLEMENTATION QUEUED |
+| 38 | Notifications | DONE — FINAL GATE PASSED |
 | 39 | Search | IMPLEMENTATION QUEUED |
 | 40 | Security / QA / Ops | IMPLEMENTATION QUEUED |
 | 41 | Cross-module integration | IMPLEMENTATION QUEUED |
@@ -34,6 +34,23 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 38 evidence
+
+STEP 38 implements M8 Notifications: in-app notification persistence, project/user ownership, severity/read state, notification preferences, project-scoped notification rules, protected notification API endpoints, service-layer preference enforcement, production migration `008_notifications.sql`, application registration, and automated unit/integration coverage.
+
+Implementation artifacts include `apps/api/src/notification_models.py`, `notification_schemas.py`, `notification_service.py`, `notification_router.py`, `apps/api/migrations/008_notifications.sql`, and the final CI/test integration changes. The notification router and ORM models are registered in `apps/api/src/main.py`.
+
+Final verification commit: `42c4bba9c89df4354749080e097263810ecb2b35` (`ci: include STEP 38 notifications migration and tests`).
+
+Verified release evidence:
+- API CI #129 — SUCCESS — run `33479151931`
+- Production Release Candidate Validation #162 — SUCCESS — run `33479151928`
+- Production Operations Health Monitor #340 — SUCCESS — run `33479151903`
+
+The final RC passed production schema application, application import, unit/integration tests, Python compilation and production public web runtime smoke testing. The production health monitor passed its public production web health check.
+
+Gate evidence is maintained in `docs/STEP-38-M8-NOTIFICATIONS-GATE.md`, which records the final decision as **DONE — FINAL GATE PASSED**.
 
 ## STEP 37 evidence
 
