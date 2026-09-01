@@ -2,6 +2,7 @@ from decimal import Decimal
 from importlib import import_module
 
 
+# STEP 37 final verification coverage is intentionally kept in the API CI path.
 def test_reporting_dashboard_schema_supports_financial_kpis():
     schemas = import_module("src.reporting_schemas")
     report = schemas.ReportingDashboard(
