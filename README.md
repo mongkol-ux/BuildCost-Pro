@@ -8,10 +8,9 @@ The implementation follows **BuildCost Pro Project Master Document V1.0** and th
 
 ## Development Status
 
-- Repository: initialized
-- Architecture baseline: STEP 0–15 completed
-- Current phase: Real Development Bootstrap
-- Target: Production-ready V1.0
+- V1.0 production baseline: released and governed
+- V1.1 foundation: STEP 26 completed on `v1.1-app-foundation`
+- Next phase: STEP 27 — V1.1 Core Application Development
 
 ## Core Areas
 
@@ -31,4 +30,4 @@ The implementation follows **BuildCost Pro Project Master Document V1.0** and th
 
 ## Engineering Principle
 
-Build from the Master Document as the single source of truth. Validate architecture, contracts, tests and security before production release.
+Build from the Master Document as the single source of truth. Keep the V1.0 production baseline isolated while V1.1 application work is developed through reviewed branches and explicit API contracts.
