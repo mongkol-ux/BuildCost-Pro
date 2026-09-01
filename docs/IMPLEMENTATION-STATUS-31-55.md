@@ -10,7 +10,7 @@ The implementation phase may be written continuously before the dedicated test p
 | STEP | Implementation target | Status |
 |---|---|---|
 | 31 | Project & Cost expansion | IMPLEMENTATION BASELINE READY — FINAL GATE BLOCKED |
-| 32 | BOQ & Estimating | IMPLEMENTATION QUEUED |
+| 32 | BOQ & Estimating | IMPLEMENTED — GATE PENDING CI |
 | 33 | Resources & Suppliers | IMPLEMENTATION QUEUED |
 | 34 | Procurement | IMPLEMENTATION QUEUED |
 | 35 | Accounting & Financial Controls | IMPLEMENTATION QUEUED |
@@ -39,12 +39,22 @@ The implementation phase may be written continuously before the dedicated test p
 
 The STEP 31 scope/architecture/gate record is maintained in `docs/STEP-31-V1.2-SCOPE-ARCHITECTURE-GATE.md`.
 
-The repository already contains the core project/cost models, protected API routes, service layer, business tests and integration tests that form the M1 baseline. STEP 31 is therefore not empty planning work; it has a concrete implementation baseline.
+The repository contains the core project/cost models, protected API routes, service layer, business tests and integration tests that form the M1 baseline. STEP 31 is not empty planning work; it has a concrete implementation baseline.
 
-However, the final gate is intentionally **not** marked DONE because the latest checked `main` commit has one failing CI/production status alongside successful checks. The failing check must be resolved and the required test/release evidence re-run before STEP 31 closes.
+The STEP 31 final gate remains separate from STEP 32 implementation. Production/CI evidence must be closed according to the STEP 31 gate record before STEP 31 is declared DONE.
+
+## STEP 32 evidence
+
+The STEP 32 scope is locked by `docs/V1.2-REMAINING-STEPS-31-45.md`: BOQ structure/revisions, estimate items, quantities/units/rates, budget-to-BOQ linkage, calculations/variance, API/UI/tests.
+
+Implementation and gate evidence are maintained in `docs/STEP-32-M2-BOQ-ESTIMATING-GATE.md`.
+
+Implemented artifacts include BOQ ORM models, validated DTOs, BOQ service/calculation logic, protected API routes, migration `003_boq_estimating.sql`, business tests, and a dedicated web BOQ page. CI was updated to apply migration 003 before running the API test suite.
+
+The latest CI run is still in progress, so STEP 32 is intentionally **not** marked DONE yet.
 
 ## Gate rule
 
-`IMPLEMENTATION BASELINE READY` != `DONE`.
+`IMPLEMENTED` != `DONE`.
 
-Only after all M1 acceptance criteria and release gates pass may STEP 31 become `DONE`, after which STEP 32 may open.
+A STEP becomes DONE only after its applicable validation, integration, CI/release gates, evidence and documentation have passed.
