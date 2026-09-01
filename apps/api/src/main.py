@@ -6,6 +6,7 @@ from .auth_router import router as auth_router
 from .config import get_settings
 from .core_router import router as core_router
 from .resource_router import router as resource_router
+from .procurement_router import router as procurement_router
 
 settings = get_settings()
 docs_url = None if settings.environment == "production" else "/docs"
@@ -34,3 +35,4 @@ def health() -> dict[str, str]:
 app.include_router(auth_router)
 app.include_router(core_router)
 app.include_router(resource_router)
+app.include_router(procurement_router)
