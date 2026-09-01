@@ -13,7 +13,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 32 | BOQ & Estimating | IMPLEMENTED — GATE PENDING VERIFICATION |
 | 33 | Resources & Suppliers | IMPLEMENTED — GATE PASSED |
 | 34 | Procurement | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 35 | Accounting & Financial Controls | IMPLEMENTATION QUEUED |
+| 35 | Accounting & Financial Controls | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 36 | Documents & Workflow | IMPLEMENTATION QUEUED |
 | 37 | Reporting & Dashboard | IMPLEMENTATION QUEUED |
 | 38 | Notifications | IMPLEMENTATION QUEUED |
@@ -35,6 +35,16 @@ The implementation phase may be written continuously before the dedicated test p
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
 
+## STEP 35 evidence
+
+STEP 35 implements M5 Accounting & Financial Controls: expanded accounting transactions with classification, tax, retention, payment status and optional financial-period linkage; financial-period lifecycle and close control; project-scoped payments; retention records; reconciliation records; protected API routes; Web UI; migration `006_accounting_financial_controls.sql`; and business validation tests.
+
+Implementation artifacts are `apps/api/src/accounting_models.py`, `accounting_schemas.py`, `accounting_service.py`, `accounting_router.py`, `apps/api/migrations/006_accounting_financial_controls.sql`, `apps/api/tests/test_accounting_business.py`, and `apps/web/app/accounting/page.tsx`. API CI migration sequence includes migration 006.
+
+Gate evidence is maintained in `docs/STEP-35-M5-ACCOUNTING-FINANCIAL-CONTROLS-GATE.md`.
+
+The implementation is complete, but STEP 35 remains **GATE PENDING CI/PRODUCTION** until the final implementation commit has successful CI, Production Release Candidate validation and Production Operations Health results.
+
 ## STEP 34 evidence
 
 STEP 34 implements M4 Procurement: purchase requests, request items, RFQ/quotation records and selection, purchase orders, commitment-ready PO totals, receiving quantities and PO receiving status lifecycle.
@@ -42,8 +52,6 @@ STEP 34 implements M4 Procurement: purchase requests, request items, RFQ/quotati
 Implementation artifacts are `apps/api/src/procurement_models.py`, `procurement_schemas.py`, `procurement_service.py`, `procurement_router.py`, `apps/api/migrations/005_procurement.sql`, `apps/api/tests/test_procurement_business.py`, and `apps/web/app/procurement/page.tsx`. The procurement router is wired into the FastAPI application and API CI applies migration 005 before tests.
 
 Gate evidence is maintained in `docs/STEP-34-M4-PROCUREMENT-GATE.md`.
-
-The implementation is complete, but STEP 34 remains **GATE PENDING CI/PRODUCTION** until the final implementation commit has successful CI, Production Release Candidate validation and Production Operations Health results.
 
 ## STEP 33 evidence
 
