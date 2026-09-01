@@ -45,14 +45,43 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
-      - name: Apply production schema
+      - name: STEP 43 database migration rehearsal
         run: python -m src.migrate
+      - name: STEP 43 verify migration result
+        run: python -c "from sqlalchemy import create_engine, inspect; from src.config import get_settings; i=inspect(create_engine(get_settings().database_url)); tables=set(i.get_table_names()); required={'users','projects','budgets','costs','transactions','boq_revisions','boq_items','resources','suppliers','procurement_requests','purchase_orders','documents','notifications'}; missing=required-tables; assert not missing, missing; print('MIGRATION_REHEARSAL=PASS')"
       - name: Validate application import
         run: python -c "from src.main import app; from src.config import get_settings; assert app.title == get_settings().app_name"
       - name: Run unit and integration tests
         run: pytest -q
       - name: Compile Python sources
         run: python -m compileall -q src tests
+      - name: STEP 43 production container build
+        working-directory: .
+        run: docker build --pull -t buildcost-pro-api:rc .
+      - name: STEP 43 staging-equivalent container smoke test
+        working-directory: .
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name buildcost-pro-rc -e PORT=8000 -p 18000:8000 buildcost-pro-api:rc
+          cleanup() { docker stop buildcost-pro-rc >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --max-time 5 -o /tmp/buildcost-rc-health.json http://127.0.0.1:18000/api/health; then
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "RC container health endpoint did not become ready in time."
+              exit 1
+            fi
+            sleep 2
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          body = json.loads(Path('/tmp/buildcost-rc-health.json').read_text())
+          assert body['status'] == 'ok', body
+          print('STAGING_EQUIVALENT_SMOKE=PASS')
+          PY
       - name: Production public web runtime smoke test
         working-directory: .
         env:
