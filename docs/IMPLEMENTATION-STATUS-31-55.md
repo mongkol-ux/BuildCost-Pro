@@ -14,7 +14,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 33 | Resources & Suppliers | IMPLEMENTED — GATE PASSED |
 | 34 | Procurement | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 35 | Accounting & Financial Controls | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 36 | Documents & Workflow | IMPLEMENTATION QUEUED |
+| 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
 | 37 | Reporting & Dashboard | IMPLEMENTATION QUEUED |
 | 38 | Notifications | IMPLEMENTATION QUEUED |
 | 39 | Search | IMPLEMENTATION QUEUED |
@@ -34,6 +34,24 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 36 evidence
+
+STEP 36 implements M6 Documents & Workflow: document metadata, versioning, attachment references, approval workflow, controlled status transitions, audit trail, protected API routes, database migration `007_documents_workflow.sql`, Web UI and business/contract tests.
+
+Final implementation commit: `94d794ee25f59e8a3f897cc6f47c9b45000d3194` (`test: add STEP 36 document workflow coverage`). Web implementation commit: `ed3c6ddedaf179aa84ae06b45e801e5e1bb766a4` (`feat: add STEP 36 documents workflow page`).
+
+Verified release evidence:
+- API CI #112 — SUCCESS — run `33477109142`
+- Production Release Candidate Validation #137 — SUCCESS — run `33477109159`
+- Production Operations Health Monitor #314 — SUCCESS — run `33477109163`
+- Web CI #14 — SUCCESS — run `33477125680`
+- Production Release Candidate Validation #138 — SUCCESS — run `33477125671`
+- Production Operations Health Monitor #315 — SUCCESS — run `33477125640`
+
+The final implementation commit passed API CI, Production RC validation and Production Operations Health. The web implementation commit passed Web CI, Production RC validation and Production Operations Health. No failed jobs remain for the STEP 36 implementation evidence.
+
+Gate evidence is maintained in `docs/STEP-36-M6-DOCUMENTS-WORKFLOW-GATE.md`.
 
 ## STEP 35 evidence
 
