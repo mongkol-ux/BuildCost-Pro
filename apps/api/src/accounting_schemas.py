@@ -4,6 +4,26 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+class AccountingTransactionCreate(BaseModel):
+    type: Literal["INCOME", "EXPENSE", "ADJUSTMENT"]
+    category: str | None = Field(default=None, min_length=1, max_length=80)
+    reference: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=5000)
+    amount: Decimal = Field(gt=0, max_digits=18, decimal_places=2)
+    tax_amount: Decimal = Field(default=Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    retention_amount: Decimal = Field(default=Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    payment_status: Literal["UNPAID", "PARTIALLY_PAID", "PAID"] = "UNPAID"
+    financial_period_id: str | None = Field(default=None, min_length=1, max_length=36)
+    occurred_at: datetime | None = None
+
+
+class AccountingTransactionResponse(AccountingTransactionCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    project_id: str
+    created_at: datetime
+
+
 class FinancialPeriodCreate(BaseModel):
     period_code: str = Field(min_length=1, max_length=32)
     start_date: date
