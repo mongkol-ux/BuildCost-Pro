@@ -62,15 +62,25 @@ jobs:
         working-directory: .
         run: |
           set -euo pipefail
-          docker run -d --rm --name buildcost-pro-rc -e PORT=8000 -p 18000:8000 buildcost-pro-api:rc
+          docker run -d --rm --name buildcost-pro-rc \
+            -e PORT=8000 \
+            -e BUILD_COST_ENVIRONMENT=production \
+            -e BUILD_COST_DATABASE_URL=postgresql+psycopg://buildcost:buildcost@host.docker.internal:5432/buildcost \
+            -e BUILD_COST_JWT_SECRET=rc-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz \
+            -e BUILD_COST_JWT_ISSUER=buildcost-pro \
+            -e BUILD_COST_ALLOWED_HOSTS='localhost,127.0.0.1,testserver' \
+            -e BUILD_COST_CORS_ORIGINS=https://buildcost-pro-production.up.railway.app \
+            --add-host=host.docker.internal:host-gateway \
+            -p 18000:8000 buildcost-pro-api:rc
           cleanup() { docker stop buildcost-pro-rc >/dev/null 2>&1 || true; }
           trap cleanup EXIT
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error --max-time 5 -o /tmp/buildcost-rc-health.json http://127.0.0.1:18000/api/health; then
+            if curl --fail --silent --show-error --max-time 5 -o /tmp/buildcost-rc-health.json http://127.0.0.1:18000/health; then
               break
             fi
             if [ "$attempt" = "30" ]; then
               echo "RC container health endpoint did not become ready in time."
+              docker logs buildcost-pro-rc || true
               exit 1
             fi
             sleep 2
@@ -79,7 +89,11 @@ jobs:
           import json
           from pathlib import Path
           body = json.loads(Path('/tmp/buildcost-rc-health.json').read_text())
-          assert body['status'] == 'ok', body
+          assert body == {
+              'status': 'ok',
+              'service': 'buildcost-pro-api',
+              'version': '1.0.0',
+          }, body
           print('STAGING_EQUIVALENT_SMOKE=PASS')
           PY
       - name: Production public web runtime smoke test
