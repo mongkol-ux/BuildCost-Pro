@@ -21,8 +21,8 @@ The implementation phase may be written continuously before the dedicated test p
 | 40 | Security / QA / Ops | DONE — FINAL GATE PASSED |
 | 41 | Cross-module integration | DONE — FINAL GATE PASSED |
 | 42 | Full QA / UAT | DONE — FINAL GATE PASSED |
-| 43 | Release Candidate | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 44 | Production Release | IMPLEMENTATION QUEUED |
+| 43 | Release Candidate | DONE — FINAL GATE PASSED |
+| 44 | Production Release | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 45 | V1.2 Production Ready | IMPLEMENTATION QUEUED |
 | 46 | Production App Packaging | IMPLEMENTATION QUEUED |
 | 47 | Mobile App | IMPLEMENTATION QUEUED |
@@ -35,6 +35,18 @@ The implementation phase may be written continuously before the dedicated test p
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
 
+## STEP 44 evidence
+
+STEP 44 implements the production-release gate for the approved V1.2 release candidate. The dedicated workflow is `.github/workflows/production-release-gate.yml` and runs on pushes to `main` plus manual dispatch. It verifies the checked-out release commit, production deployment contract, complete checked-in migration chain, application import/compile, live production API health/security contract, live production web health/security contract, authentication boundary, and protected core route boundaries.
+
+The API production Dockerfile runs `python -m src.migrate` before starting uvicorn, and Railway uses `/health` as the API healthcheck. The public web production deployment uses `/api/health`. These contracts are intentionally checked separately to avoid the STEP 43 `/health` versus `/api/health` routing mismatch.
+
+The rollback procedure remains the STEP 43 approved deployment rollback plan: identify the last known-good immutable release, roll back the application deployment, verify health/auth/protected routes, and use an approved restore/forward-fix path for database recovery where required.
+
+Implementation commit: `07ccfb4d5d2b334faeabb5fe1cd744537d4226f3` (`ci: add STEP 44 production release gate`).
+
+The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 44 must not be marked DONE until the production-release workflow and production operations health checks pass for the same release commit and release evidence is recorded.
+
 ## STEP 43 evidence
 
 STEP 43 prepares the V1.2 release candidate. Release scope is frozen to the completed STEP 31–42 scope except for release-blocking fixes. The RC workflow now performs a fresh PostgreSQL 16 migration rehearsal, verifies the expected schema tables, validates application import, runs the complete API test suite, compiles Python sources, builds the production root Dockerfile, runs a staging-equivalent local container health smoke test, and retains the production public health/security smoke test.
@@ -43,7 +55,7 @@ Rollback readiness is documented in `docs/STEP-43-RELEASE-CANDIDATE-ROLLBACK.md`
 
 Gate evidence is maintained in `docs/STEP-43-RELEASE-CANDIDATE-GATE.md`.
 
-The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 43 must not be marked DONE until the final release-candidate commit passes API CI, migration rehearsal, container/build validation, staging-equivalent smoke validation, production runtime checks, and release rollback readiness checks.
+The final release-candidate validation passed for commit `b8f241c6f7ec1a393af1d6855e7d4df52cf39574` via Production Release Candidate Validation #197, with Production Operations Health Monitor #376/#377 also successful.
 
 ## STEP 42 evidence
 
