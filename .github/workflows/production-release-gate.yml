@@ -58,11 +58,6 @@ jobs:
             status_json=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/status")
             all_passed=true
             for context in "${required_contexts[@]}"; do
-              state=$(python - "$context" <<'PY'
-          import json, sys
-          data=json.loads(sys.stdin.read()) if False else None
-          PY
-              )
               state=$(python -c 'import json,sys; d=json.load(sys.stdin); c=sys.argv[1]; rows=[x for x in d.get("statuses",[]) if x.get("context")==c]; print(rows[0].get("state","missing") if rows else "missing")' "$context" <<<"$status_json")
               echo "$context=$state"
               if [ "$state" != "success" ]; then
@@ -128,7 +123,7 @@ jobs:
           docker run -d --rm --name buildcost-pro-step44 \
             -e PORT=8000 \
             -e BUILD_COST_ENVIRONMENT=production \
-            -e BUILD_COST_DATABASE_URL="$BUILD_COST_DATABASE_URL" \
+            -e BUILD_COST_DATABASE_URL=postgresql+psycopg://host.docker.internal:5432/buildcost \
             -e BUILD_COST_JWT_SECRET="$BUILD_COST_JWT_SECRET" \
             -e BUILD_COST_JWT_ISSUER="$BUILD_COST_JWT_ISSUER" \
             -e BUILD_COST_ALLOWED_HOSTS="$BUILD_COST_ALLOWED_HOSTS" \
