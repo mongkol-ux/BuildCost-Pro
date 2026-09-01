@@ -34,7 +34,7 @@ jobs:
       BUILD_COST_JWT_SECRET: rc-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz
       BUILD_COST_JWT_ISSUER: buildcost-pro
       BUILD_COST_ALLOWED_HOSTS: testserver,localhost
-      BUILD_COST_CORS_ORIGINS: http://localhost:3000
+      BUILD_COST_CORS_ORIGINS: https://buildcost-pro-production.up.railway.app
     defaults:
       run:
         working-directory: apps/api
@@ -100,17 +100,12 @@ jobs:
               'x-content-type-options': 'nosniff',
               'x-frame-options': 'DENY',
               'referrer-policy': 'no-referrer',
+              'permissions-policy': 'camera=(), microphone=(), geolocation=()',
           }
           for key, expected in required.items():
               assert headers.get(key) == expected, (key, headers.get(key))
-
-          permissions = headers.get('permissions-policy', '').replace(' ', '')
-          assert permissions == 'camera=(),microphone=(),geolocation=()', permissions
-
-          hsts = headers.get('strict-transport-security', '')
-          assert 'max-age=31536000' in hsts, hsts
-          assert 'includesubdomains' in hsts.lower(), hsts
-          print('PUBLIC_PRODUCTION_SMOKE_TEST=PASS')
-          print('SECURITY_HEADERS=PASS')
-          print('HEALTH_CONTRACT=PASS')
+          assert headers.get('strict-transport-security') == 'max-age=31536000; includeSubDomains'
+          assert headers.get('x-request-id')
+          print('PUBLIC_HEALTH_SMOKE=PASS')
+          print('SECURITY_HEADERS_PRODUCTION=PASS')
           PY
