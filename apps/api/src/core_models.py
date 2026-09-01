@@ -1,9 +1,9 @@
 """SQLAlchemy models for the BuildCost Pro core business domain."""
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .auth_models import Base
@@ -63,49 +63,27 @@ class Transaction(CoreBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
 
-class FinancialPeriod(CoreBase):
-    __tablename__ = "financial_periods"
+class BOQRevision(CoreBase):
+    __tablename__ = "boq_revisions"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    period_code: Mapped[str] = mapped_column(String(32), nullable=False)
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(16), default="OPEN", nullable=False)
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    budget_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("budgets.id", ondelete="SET NULL"))
+    revision_no: Mapped[int] = mapped_column(nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="DRAFT", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
-class Payment(CoreBase):
-    __tablename__ = "payments"
+class BOQItem(CoreBase):
+    __tablename__ = "boq_items"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    transaction_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("transactions.id", ondelete="SET NULL"))
-    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    payment_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(16), default="PAID", nullable=False)
-    reference: Mapped[str | None] = mapped_column(String(120))
+    revision_id: Mapped[str] = mapped_column(String(36), ForeignKey("boq_revisions.id", ondelete="CASCADE"), nullable=False)
+    item_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    unit: Mapped[str] = mapped_column(String(32), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    unit_rate: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    total: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-
-
-class Retention(CoreBase):
-    __tablename__ = "retentions"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    transaction_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("transactions.id", ondelete="SET NULL"))
-    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    released_amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    status: Mapped[str] = mapped_column(String(24), default="HELD", nullable=False)
-    release_date: Mapped[date | None] = mapped_column(Date)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-
-
-class Reconciliation(CoreBase):
-    __tablename__ = "reconciliations"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    financial_period_id: Mapped[str] = mapped_column(String(36), ForeignKey("financial_periods.id", ondelete="RESTRICT"), nullable=False)
-    expected_total: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    actual_total: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    difference: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
-    status: Mapped[str] = mapped_column(String(16), nullable=False)
-    reconciled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
