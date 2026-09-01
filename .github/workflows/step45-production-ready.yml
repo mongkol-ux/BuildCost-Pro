@@ -1,0 +1,53 @@
+name: STEP 45 V1.2 Production Ready
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md'
+      - 'docs/IMPLEMENTATION-STATUS-31-55.md'
+      - '.github/workflows/step45-production-ready.yml'
+  workflow_dispatch:
+
+jobs:
+  v1-2-production-ready:
+    name: STEP 45 production-ready handover gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Validate STEP 45 handover evidence requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q '## Required closure checklist' docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q 'PostgreSQL backup owner' docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q 'non-production restore drill' docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q 'immutable V1.2 release tag' docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q 'STEP 45' docs/IMPLEMENTATION-STATUS-31-55.md
+
+      - name: Verify release-gate workflow exists
+        shell: bash
+        run: test -f .github/workflows/production-release-gate.yml
+
+      - name: Verify rollback policy exists
+        shell: bash
+        run: test -f docs/STEP-43-RELEASE-CANDIDATE-ROLLBACK.md
+
+      - name: Verify operational baseline exists
+        shell: bash
+        run: test -f docs/PRODUCTION_OPERATIONS_V1.0.md
+
+      - name: Verify current handover is not falsely marked complete
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '^\*\*Status:\*\* IN PROGRESS' docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md
+          grep -q 'STEP 45 | IN PROGRESS' docs/IMPLEMENTATION-STATUS-31-55.md
+
+      - name: STEP 45 gate result
+        run: |
+          echo 'STEP 45 evidence framework is valid.'
+          echo 'Production-ready closure remains blocked until dated backup/restore, operations-owner, and immutable-tag evidence is recorded.'
