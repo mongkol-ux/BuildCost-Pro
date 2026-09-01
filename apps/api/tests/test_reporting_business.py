@@ -30,6 +30,6 @@ def test_reporting_dashboard_schema_supports_financial_kpis():
 
 def test_reporting_api_routes_are_registered():
     main = import_module("src.main")
-    paths = {route.path for route in main.app.routes}
+    paths = set(main.app.openapi()["paths"])
     assert "/api/v1/reports/projects/{project_id}/dashboard" in paths
     assert "/api/v1/reports/projects/{project_id}/export.csv" in paths
