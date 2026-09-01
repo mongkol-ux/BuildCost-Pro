@@ -8,7 +8,7 @@ from src.procurement_service import receive
 def test_procurement_item_total_formula():
     quantity = Decimal("12.5000")
     unit_rate = Decimal("80.25")
-    assert (quantity * unit_rate).quantize(Decimal("0.01")) == Decimal("1003.13")
+    assert (quantity * unit_rate).quantize(Decimal("0.01")) == Decimal("1003.12")
 
 
 def test_receive_rejects_over_receipt(monkeypatch):
