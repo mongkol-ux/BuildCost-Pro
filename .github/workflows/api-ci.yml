@@ -49,7 +49,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Apply database migrations
         run: |
-          python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); [c.execute(text(open(f).read())) for f in ('migrations/001_authentication.sql','migrations/002_core_business.sql','migrations/003_boq_estimating.sql','migrations/004_resources_suppliers.sql','migrations/005_procurement.sql','migrations/006_accounting_financial_controls.sql','migrations/007_documents_workflow.sql')]; c.commit(); c.close()"
+          python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); [c.execute(text(open(f).read())) for f in ('migrations/001_authentication.sql','migrations/002_core_business.sql','migrations/003_boq_estimating.sql','migrations/004_resources_suppliers.sql','migrations/005_procurement.sql','migrations/006_accounting_financial_controls.sql','migrations/007_documents_workflow.sql','migrations/008_notifications.sql')]; c.commit(); c.close()"
       - run: pytest -q
 
   container-build:
@@ -59,4 +59,4 @@ jobs:
       - name: Build production Docker image
         run: docker build -t buildcost-pro-api:ci .
 
-# STEP 37 gate: API CI intentionally remains independently runnable for final verification.
+# STEP 38 gate: notifications migration, API and tests are included in CI verification.
