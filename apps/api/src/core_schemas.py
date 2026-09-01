@@ -2,11 +2,11 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
+from pydantic import BaseModel, ConfigDict, Field
 
 ProjectStatus = Literal["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"]
 TransactionType = Literal["INCOME", "EXPENSE", "ADJUSTMENT"]
+BOQStatus = Literal["DRAFT", "APPROVED", "ARCHIVED"]
 
 
 class ProjectCreate(BaseModel):
@@ -83,3 +83,44 @@ class ProjectSummary(BaseModel):
     adjustment_total: Decimal
     balance: Decimal
     budget_remaining: Decimal
+
+
+class BOQRevisionCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    budget_id: str | None = Field(default=None, min_length=1, max_length=36)
+
+
+class BOQRevisionResponse(BOQRevisionCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    project_id: str
+    revision_no: int
+    status: BOQStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+class BOQItemCreate(BaseModel):
+    item_code: str = Field(min_length=1, max_length=64)
+    description: str = Field(min_length=1, max_length=1000)
+    unit: str = Field(min_length=1, max_length=32)
+    quantity: Decimal = Field(gt=0, max_digits=18, decimal_places=4)
+    unit_rate: Decimal = Field(ge=0, max_digits=18, decimal_places=2)
+
+
+class BOQItemResponse(BOQItemCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    revision_id: str
+    total: Decimal
+    created_at: datetime
+    updated_at: datetime
+
+
+class BOQEstimateSummary(BaseModel):
+    revision_id: str
+    budget_amount: Decimal
+    estimate_total: Decimal
+    variance: Decimal
+    variance_percent: Decimal | None
+    item_count: int
