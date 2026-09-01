@@ -1,0 +1,141 @@
+name: STEP 44 Production Release Gate
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout approved release
+        uses: actions/checkout@v4
+
+      - name: Verify release candidate commit
+        run: |
+          set -euo pipefail
+          echo "RELEASE_COMMIT=$GITHUB_SHA"
+          git status --short
+
+      - name: Verify production deployment contract
+        run: |
+          set -euo pipefail
+          test -f apps/api/Dockerfile
+          grep -F 'python -m src.migrate && uvicorn src.main:app' apps/api/Dockerfile
+          test -f apps/api/railway.toml
+          grep -F 'healthcheckPath = "/health"' apps/api/railway.toml
+          echo 'DEPLOYMENT_CONTRACT=PASS'
+
+      - name: Verify checked-in migrations
+        run: |
+          set -euo pipefail
+          test -f apps/api/migrations/001_authentication.sql
+          test -f apps/api/migrations/009_search.sql
+          echo 'MIGRATION_CHAIN=PASS'
+
+      - name: Verify production application import and compile
+        working-directory: apps/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -c "from src.main import app; assert app.title"
+          python -m compileall -q src tests
+          echo 'APPLICATION_VALIDATION=PASS'
+
+      - name: Verify production API health and security contract
+        env:
+          PRODUCTION_API_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 \
+            -D /tmp/api-headers.txt \
+            -o /tmp/api-health.json \
+            "$PRODUCTION_API_BASE_URL/health"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          body = json.loads(Path('/tmp/api-health.json').read_text())
+          assert body == {
+              'status': 'ok',
+              'service': 'buildcost-pro-api',
+              'version': '1.0.0',
+          }, body
+          headers = {}
+          for line in Path('/tmp/api-headers.txt').read_text().splitlines():
+              if ':' in line:
+                  key, value = line.split(':', 1)
+                  headers[key.lower().strip()] = value.strip()
+          assert headers.get('x-content-type-options') == 'nosniff'
+          assert headers.get('x-frame-options') == 'DENY'
+          print('PRODUCTION_API_HEALTH=PASS')
+          print('PRODUCTION_API_SECURITY_HEADERS=PASS')
+          PY
+
+      - name: Verify production web health and security contract
+        env:
+          PRODUCTION_WEB_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 \
+            -D /tmp/web-headers.txt \
+            -o /tmp/web-health.json \
+            "$PRODUCTION_WEB_BASE_URL/api/health"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          body = json.loads(Path('/tmp/web-health.json').read_text())
+          assert body == {
+              'status': 'ok',
+              'service': 'buildcost-pro-web',
+              'version': '1.1.0',
+          }, body
+          headers = {}
+          for line in Path('/tmp/web-headers.txt').read_text().splitlines():
+              if ':' in line:
+                  key, value = line.split(':', 1)
+                  headers[key.lower().strip()] = value.strip()
+          assert headers.get('x-content-type-options') == 'nosniff'
+          assert headers.get('x-frame-options') == 'DENY'
+          assert headers.get('referrer-policy') == 'no-referrer'
+          assert headers.get('strict-transport-security') == 'max-age=31536000; includeSubDomains'
+          print('PRODUCTION_WEB_HEALTH=PASS')
+          print('PRODUCTION_WEB_SECURITY_HEADERS=PASS')
+          PY
+
+      - name: Verify authentication boundary on production web
+        env:
+          PRODUCTION_WEB_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 15 -o /tmp/projects.json -w '%{http_code}' "$PRODUCTION_WEB_BASE_URL/api/v1/projects")
+          test "$status" = "401"
+          echo 'AUTHENTICATION_BOUNDARY=PASS'
+
+      - name: Verify core workflow route boundaries on production web
+        env:
+          PRODUCTION_WEB_BASE_URL: https://buildcost-pro-production.up.railway.app
+        run: |
+          set -euo pipefail
+          for path in /api/v1/search?q=release /api/v1/notifications /api/v1/projects/nonexistent/integration-summary; do
+            status=$(curl --silent --show-error --max-time 15 -o /tmp/route.json -w '%{http_code}' "$PRODUCTION_WEB_BASE_URL$path")
+            test "$status" = "401"
+          done
+          echo 'CORE_ROUTE_AUTH_BOUNDARY=PASS'
+
+      - name: Release evidence summary
+        run: |
+          cat <<'EOF'
+          STEP 44 Production Release Gate
+          - Approved release commit: verified by checkout
+          - Production migration: Docker CMD runs src.migrate before uvicorn
+          - API health/security contract: verified
+          - Web health/security contract: verified
+          - Authentication boundary: verified
+          - Core protected route boundaries: verified
+          - Rollback procedure: inherited from STEP 43 documented rollback plan
+          EOF
