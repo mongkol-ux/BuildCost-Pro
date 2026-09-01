@@ -15,7 +15,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 34 | Procurement | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 35 | Accounting & Financial Controls | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
-| 37 | Reporting & Dashboard | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
+| 37 | Reporting & Dashboard | DONE — FINAL GATE PASSED |
 | 38 | Notifications | IMPLEMENTATION QUEUED |
 | 39 | Search | IMPLEMENTATION QUEUED |
 | 40 | Security / QA / Ops | IMPLEMENTATION QUEUED |
@@ -41,9 +41,15 @@ STEP 37 implements M7 Reporting & Dashboard: project financial KPI aggregation, 
 
 Implementation artifacts are `apps/api/src/reporting_schemas.py`, `reporting_service.py`, `reporting_router.py`, `apps/api/tests/test_reporting_business.py`, and `apps/web/app/reports/page.tsx`. The reporting router is wired into `apps/api/src/main.py`.
 
-Final implementation commit at this stage: `2b7b35cda1757845b7a9a401187448c8ace4abfd` (`feat: add STEP 37 reporting dashboard UI`).
+Verified implementation commits include `b0432fdb3fb122340b658c1a8be78ebef469d20b` (route registration test fix) and `53eaccbc274f81046aaba22fa069292cd4f5e041` (final API verification trigger).
 
-Gate status: implementation complete; CI/Production verification pending. STEP 37 is not DONE until API CI, Web CI, Production Release Candidate validation, Production Operations Health and gate documentation all pass.
+Verified release evidence:
+- API CI #120 — SUCCESS
+- Production Release Candidate Validation #151 — SUCCESS
+- Production Operations Health Monitor #328 — SUCCESS
+- Web CI — SUCCESS for the final web implementation evidence
+
+Gate evidence is maintained in `docs/STEP-37-M7-REPORTING-DASHBOARD-GATE.md`, which records the final decision as **DONE — FINAL GATE PASSED**.
 
 ## STEP 36 evidence
 
@@ -59,25 +65,17 @@ Verified release evidence:
 - Production Release Candidate Validation #138 — SUCCESS — run `33477125671`
 - Production Operations Health Monitor #315 — SUCCESS — run `33477125640`
 
-The final implementation commit passed API CI, Production RC validation and Production Operations Health. The web implementation commit passed Web CI, Production RC validation and Production Operations Health. No failed jobs remain for the STEP 36 implementation evidence.
-
 Gate evidence is maintained in `docs/STEP-36-M6-DOCUMENTS-WORKFLOW-GATE.md`.
 
 ## STEP 35 evidence
 
 STEP 35 implements M5 Accounting & Financial Controls: expanded accounting transactions with classification, tax, retention, payment status and optional financial-period linkage; financial-period lifecycle and close control; project-scoped payments; retention records; reconciliation records; protected API routes; Web UI; migration `006_accounting_financial_controls.sql`; and business validation tests.
 
-Implementation artifacts are `apps/api/src/accounting_models.py`, `accounting_schemas.py`, `accounting_service.py`, `accounting_router.py`, `apps/api/migrations/006_accounting_financial_controls.sql`, `apps/api/tests/test_accounting_business.py`, and `apps/web/app/accounting/page.tsx`. API CI migration sequence includes migration 006.
-
 Gate evidence is maintained in `docs/STEP-35-M5-ACCOUNTING-FINANCIAL-CONTROLS-GATE.md`.
-
-The implementation is complete, but STEP 35 remains **GATE PENDING CI/PRODUCTION** until the final implementation commit has successful CI, Production Release Candidate validation and Production Operations Health results.
 
 ## STEP 34 evidence
 
 STEP 34 implements M4 Procurement: purchase requests, request items, RFQ/quotation records and selection, purchase orders, commitment-ready PO totals, receiving quantities and PO receiving status lifecycle.
-
-Implementation artifacts are `apps/api/src/procurement_models.py`, `procurement_schemas.py`, `procurement_service.py`, `procurement_router.py`, `apps/api/migrations/005_procurement.sql`, `apps/api/tests/test_procurement_business.py`, and `apps/web/app/procurement/page.tsx`. The procurement router is wired into the FastAPI application and API CI applies migration 005 before tests.
 
 Gate evidence is maintained in `docs/STEP-34-M4-PROCUREMENT-GATE.md`.
 
