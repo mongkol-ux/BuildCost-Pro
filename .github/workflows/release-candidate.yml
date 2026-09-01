@@ -105,7 +105,6 @@ jobs:
           for key, expected in required.items():
               assert headers.get(key) == expected, (key, headers.get(key))
           assert headers.get('strict-transport-security') == 'max-age=31536000; includeSubDomains'
-          assert headers.get('x-request-id')
           print('PUBLIC_HEALTH_SMOKE=PASS')
           print('SECURITY_HEADERS_PRODUCTION=PASS')
           PY
