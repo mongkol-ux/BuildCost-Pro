@@ -1,10 +1,4 @@
 -- STEP 35 / M5 Accounting & Financial Controls
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS financial_period_id varchar(36) REFERENCES financial_periods(id) ON DELETE RESTRICT;
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS category varchar(80);
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tax_amount numeric(18,2) NOT NULL DEFAULT 0;
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS retention_amount numeric(18,2) NOT NULL DEFAULT 0;
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_status varchar(32) NOT NULL DEFAULT 'UNPAID';
-
 CREATE TABLE IF NOT EXISTS financial_periods (
   id varchar(36) PRIMARY KEY,
   project_id varchar(36) NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -18,6 +12,12 @@ CREATE TABLE IF NOT EXISTS financial_periods (
   CONSTRAINT financial_period_status_ck CHECK (status IN ('OPEN','CLOSED')),
   CONSTRAINT financial_period_project_code_uq UNIQUE (project_id, period_code)
 );
+
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS financial_period_id varchar(36) REFERENCES financial_periods(id) ON DELETE RESTRICT;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS category varchar(80);
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tax_amount numeric(18,2) NOT NULL DEFAULT 0;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS retention_amount numeric(18,2) NOT NULL DEFAULT 0;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_status varchar(32) NOT NULL DEFAULT 'UNPAID';
 
 CREATE TABLE IF NOT EXISTS payments (
   id varchar(36) PRIMARY KEY,
