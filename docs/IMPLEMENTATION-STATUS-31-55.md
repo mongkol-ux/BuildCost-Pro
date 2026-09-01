@@ -17,8 +17,8 @@ The implementation phase may be written continuously before the dedicated test p
 | 36 | Documents & Workflow | DONE — FINAL GATE PASSED |
 | 37 | Reporting & Dashboard | DONE — FINAL GATE PASSED |
 | 38 | Notifications | DONE — FINAL GATE PASSED |
-| 39 | Search | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 40 | Security / QA / Ops | IMPLEMENTATION QUEUED |
+| 39 | Search | DONE — FINAL GATE PASSED |
+| 40 | Security / QA / Ops | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 41 | Cross-module integration | IMPLEMENTATION QUEUED |
 | 42 | Full QA / UAT | IMPLEMENTATION QUEUED |
 | 43 | Release Candidate | IMPLEMENTATION QUEUED |
@@ -35,6 +35,14 @@ The implementation phase may be written continuously before the dedicated test p
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
 
+## STEP 40 evidence
+
+STEP 40 implements M10 Security / QA / Ops expansion: strengthened HTTP security headers, request-ID propagation, safe error observability, production JWT/cookie/CORS configuration validation, authentication audit/security events, and regression/security test coverage. Existing V1.2 protected routers continue to enforce authenticated-user and ownership/role boundaries.
+
+Implementation changes include `apps/api/src/main.py`, `apps/api/src/config.py`, `apps/api/src/auth_service.py`, and expanded security/health tests. Gate evidence is maintained in `docs/STEP-40-M10-SECURITY-QA-OPS-GATE.md`.
+
+The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 40 must not be marked DONE until the final API CI, production release-candidate validation, and production operations health checks pass.
+
 ## STEP 39 evidence
 
 STEP 39 implements M9 Search: global/project search, filter/project scope and pagination contracts, permission-aware project-owned results, search indexing support, protected API endpoint, and automated contract coverage.
@@ -45,7 +53,7 @@ The protected endpoint is `GET /api/v1/search?q=<term>&project_id=<optional>&pag
 
 Project-owned records are filtered to projects owned by the authenticated user. A supplied project filter is rejected by returning no results when the project is not owned by that user. Resource and supplier masters remain globally searchable because the current schema does not assign them to projects.
 
-Gate evidence is maintained in `docs/STEP-39-M9-SEARCH-GATE.md`. CI/production verification is intentionally still pending; STEP 39 must not be marked DONE until those gates pass.
+Gate evidence is maintained in `docs/STEP-39-M9-SEARCH-GATE.md`. Final production release-candidate and production health verification passed for the recorded STEP 39 implementation commit.
 
 ## STEP 38 evidence
 
