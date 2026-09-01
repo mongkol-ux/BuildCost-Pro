@@ -8,9 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .auth_models import Base
 
-# Keep a single SQLAlchemy metadata registry for authentication and core models.
-# Core projects reference users.id, so the users table must be present in the
-# same metadata collection for ORM foreign-key resolution.
 CoreBase = Base
 
 
@@ -59,3 +56,29 @@ class Transaction(CoreBase):
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+
+class BOQRevision(CoreBase):
+    __tablename__ = "boq_revisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    budget_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("budgets.id", ondelete="SET NULL"))
+    revision_no: Mapped[int] = mapped_column(nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="DRAFT", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class BOQItem(CoreBase):
+    __tablename__ = "boq_items"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    revision_id: Mapped[str] = mapped_column(String(36), ForeignKey("boq_revisions.id", ondelete="CASCADE"), nullable=False)
+    item_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    unit: Mapped[str] = mapped_column(String(32), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    unit_rate: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    total: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
