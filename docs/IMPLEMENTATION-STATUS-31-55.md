@@ -19,7 +19,7 @@ The implementation phase may be written continuously before the dedicated test p
 | 38 | Notifications | DONE — FINAL GATE PASSED |
 | 39 | Search | DONE — FINAL GATE PASSED |
 | 40 | Security / QA / Ops | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
-| 41 | Cross-module integration | IMPLEMENTATION QUEUED |
+| 41 | Cross-module integration | IMPLEMENTED — GATE PENDING CI/PRODUCTION |
 | 42 | Full QA / UAT | IMPLEMENTATION QUEUED |
 | 43 | Release Candidate | IMPLEMENTATION QUEUED |
 | 44 | Production Release | IMPLEMENTATION QUEUED |
@@ -34,6 +34,18 @@ The implementation phase may be written continuously before the dedicated test p
 | 53 | App Store Release | IMPLEMENTATION QUEUED |
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
+
+## STEP 41 evidence
+
+STEP 41 implements the cross-module project chain: Project → BOQ → Budget → Procurement → Commitment → Cost → Accounting. The canonical integration service is `apps/api/src/integration_service.py`, and the protected endpoint is `GET /api/v1/projects/{project_id}/integration-summary`.
+
+The integration service uses the project as the ownership boundary, resolves BOQ totals through project-owned revisions, derives commitments from non-cancelled/non-void purchase orders through project-owned procurement requests, and reports cost and accounting expense separately to prevent double counting.
+
+Automated coverage is maintained in `apps/api/tests/test_step41_cross_module_integration.py` and covers the integration summary contract, missing-project rejection, protected route registration, shared project ownership foreign-key chain, and commitment/cost/accounting separation.
+
+Gate evidence is maintained in `docs/STEP-41-CROSS-MODULE-INTEGRATION-GATE.md`.
+
+The current decision is **IMPLEMENTED — FINAL CI/PRODUCTION GATE PENDING**. STEP 41 must not be marked DONE until the final API CI, production release-candidate validation, and production operations health checks pass for the final integration commit.
 
 ## STEP 40 evidence
 
@@ -78,29 +90,11 @@ STEP 37 implements M7 Reporting & Dashboard: project financial KPI aggregation, 
 
 Implementation artifacts are `apps/api/src/reporting_schemas.py`, `reporting_service.py`, `reporting_router.py`, `apps/api/tests/test_reporting_business.py`, and `apps/web/app/reports/page.tsx`. The reporting router is wired into `apps/api/src/main.py`.
 
-Verified implementation commits include `b0432fdb3fb122340b658c1a8be78ebef469d20b` (route registration test fix) and `53eaccbc274f81046aaba22fa069292cd4f5e041` (final API verification trigger).
-
-Verified release evidence:
-- API CI #120 — SUCCESS
-- Production Release Candidate Validation #151 — SUCCESS
-- Production Operations Health Monitor #328 — SUCCESS
-- Web CI — SUCCESS for the final web implementation evidence
-
 Gate evidence is maintained in `docs/STEP-37-M7-REPORTING-DASHBOARD-GATE.md`, which records the final decision as **DONE — FINAL GATE PASSED**.
 
 ## STEP 36 evidence
 
 STEP 36 implements M6 Documents & Workflow: document metadata, versioning, attachment references, approval workflow, controlled status transitions, audit trail, protected API routes, database migration `007_documents_workflow.sql`, Web UI and business/contract tests.
-
-Final implementation commit: `94d794ee25f59e8a3f897cc6f47c9b45000d3194` (`test: add STEP 36 document workflow coverage`). Web implementation commit: `ed3c6ddedaf179aa84ae06b45e801e5e1bb766a4` (`feat: add STEP 36 documents workflow page`).
-
-Verified release evidence:
-- API CI #112 — SUCCESS — run `33477109142`
-- Production Release Candidate Validation #137 — SUCCESS — run `33477109159`
-- Production Operations Health Monitor #314 — SUCCESS — run `33477109163`
-- Web CI #14 — SUCCESS — run `33477125680`
-- Production Release Candidate Validation #138 — SUCCESS — run `33477125671`
-- Production Operations Health Monitor #315 — SUCCESS — run `33477125640`
 
 Gate evidence is maintained in `docs/STEP-36-M6-DOCUMENTS-WORKFLOW-GATE.md`.
 
