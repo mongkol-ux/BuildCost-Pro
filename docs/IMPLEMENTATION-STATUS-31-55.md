@@ -35,108 +35,13 @@ The implementation phase may be written continuously before the dedicated test p
 | 54 | Public Launch | IMPLEMENTATION QUEUED |
 | 55 | V1.3 Continuous Development | IMPLEMENTATION QUEUED |
 
-## STEP 44 evidence
+## STEP 45 evidence
 
-STEP 44 implements the production-release gate for the approved V1.2 release candidate. The dedicated workflow is `.github/workflows/production-release-gate.yml` and runs on pushes to `main` plus manual dispatch. It verifies the checked-out release commit, production deployment contract, complete checked-in migration chain, application import/compile, live production API health/security contract, live production web health/security contract, authentication boundary, and protected core route boundaries.
+STEP 45 is the V1.2 production handover gate. STEP 44 established deployability and production validation, but STEP 45 requires dated operational evidence before declaring V1.2 production-ready.
 
-The API production Dockerfile runs `python -m src.migrate` before starting uvicorn, and Railway uses `/health` as the API healthcheck. The public web production deployment uses `/api/health`. These contracts are intentionally checked separately to avoid the STEP 43 `/health` versus `/api/health` routing mismatch.
+The dedicated automated evidence gate is `.github/workflows/step45-production-ready.yml`. It validates the handover evidence framework, required release/rollback/operations documents, and intentionally blocks false completion while backup/restore, operational-owner, and immutable-tag evidence remains outstanding.
 
-The rollback procedure remains the STEP 43 approved deployment rollback plan: identify the last known-good immutable release, roll back the application deployment, verify health/auth/protected routes, and use an approved restore/forward-fix path for database recovery where required.
-
-The final gate passed for commit `b10b6563145f8a9150cc1779ddafef7006fa0d75` via STEP 44 Production Release Gate run #5. Every required job step passed: Railway production status, deployment contract, PostgreSQL 16 migrations, application validation, API production container smoke, API authentication/protected-route boundaries, and public web health/security assertions.
-
-The current decision is **DONE — FINAL GATE PASSED**. STEP 45 handover evidence is tracked in `docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md`; it must establish the backup/restore drill and immutable release tag before V1.2 is declared production-ready.
-
-## STEP 43 evidence
-
-STEP 43 prepares the V1.2 release candidate. Release scope is frozen to the completed STEP 31–42 scope except for release-blocking fixes. The RC workflow now performs a fresh PostgreSQL 16 migration rehearsal, verifies the expected schema tables, validates application import, runs the complete API test suite, compiles Python sources, builds the production root Dockerfile, runs a staging-equivalent local container health smoke test, and retains the production public health/security smoke test.
-
-Rollback readiness is documented in `docs/STEP-43-RELEASE-CANDIDATE-ROLLBACK.md`. The rollback policy uses an immutable known-good application deployment first and does not assume destructive database migrations are automatically reversible.
-
-Gate evidence is maintained in `docs/STEP-43-RELEASE-CANDIDATE-GATE.md`.
-
-The final release-candidate validation passed for commit `b8f241c6f7ec1a393af1d6855e7d4df52cf39574` via Production Release Candidate Validation #197, with Production Operations Health Monitor #376/#377 also successful.
-
-## STEP 42 evidence
-
-STEP 42 implements the full QA/UAT layer over the V1.2 system. Coverage includes financial reconciliation and integration invariants, authentication/permission boundary regression, API release-candidate validation, production runtime smoke validation, and a repeatable UAT acceptance checklist.
-
-Implementation artifacts include `apps/api/tests/test_step42_full_qa_uat.py` and `docs/STEP-42-FULL-QA-UAT-GATE.md`. The new QA test verifies budget/cost/accounting reconciliation, integration-summary consistency, and rejection of cross-user project access.
-
-The final QA/UAT release-candidate validation and production operations health checks passed for commit `71c6a3df233fb055ade4de9a4faf6eba72d582ff`.
-
-## STEP 41 evidence
-
-STEP 41 implements the cross-module project chain: Project → BOQ → Budget → Procurement → Commitment → Cost → Accounting. The canonical integration service is `apps/api/src/integration_service.py`, and the protected endpoint is `GET /api/v1/projects/{project_id}/integration-summary`.
-
-The integration service uses the project as the ownership boundary, resolves BOQ totals through project-owned revisions, derives commitments from non-cancelled/non-void purchase orders through project-owned procurement requests, and reports cost and accounting expense separately to prevent double counting.
-
-Automated coverage is maintained in `apps/api/tests/test_step41_cross_module_integration.py` and covers the integration summary contract, missing-project rejection, protected route registration, shared project ownership foreign-key chain, and commitment/cost/accounting separation.
-
-The final production RC and health checks passed for commit `bc740c77afc7b905ba06adf18311a1befafb2f9a`.
-
-## STEP 40 evidence
-
-STEP 40 implements M10 Security / QA / Ops expansion: strengthened HTTP security headers, request-ID propagation, safe error observability, production JWT/cookie/CORS configuration validation, authentication audit/security events, and regression/security test coverage.
-
-The final production RC and operations health checks passed for commit `4625c3c6fc2b94c71279c5ac3c891d8e20254c4f` after resolving the production CORS validation mismatch.
-
-## STEP 39 evidence
-
-STEP 39 implements M9 Search: global/project search, filter/project scope and pagination contracts, permission-aware project-owned results, search indexing support, protected API endpoint, and automated contract coverage.
-
-Implementation artifacts include `apps/api/src/search_schemas.py`, `search_service.py`, `search_router.py`, `apps/api/migrations/009_search.sql`, `apps/api/tests/test_step39_search.py`, and registration in `apps/api/src/main.py`.
-
-The protected endpoint is `GET /api/v1/search?q=<term>&project_id=<optional>&page=1&page_size=20`.
-
-Final production release-candidate and production health verification passed for the recorded STEP 39 implementation commit.
-
-## STEP 38 evidence
-
-STEP 38 implements M8 Notifications: in-app notification persistence, project/user ownership, severity/read state, notification preferences, project-scoped notification rules, protected notification API endpoints, service-layer preference enforcement, production migration `008_notifications.sql`, application registration, and automated unit/integration coverage.
-
-Final verification commit: `42c4bba9c89df4354749080e097263810ecb2b35`.
-
-Verified release evidence:
-- API CI #129 — SUCCESS
-- Production Release Candidate Validation #162 — SUCCESS
-- Production Operations Health Monitor #340 — SUCCESS
-
-Gate evidence is maintained in `docs/STEP-38-M8-NOTIFICATIONS-GATE.md`, which records the final decision as **DONE — FINAL GATE PASSED**.
-
-## STEP 37 evidence
-
-STEP 37 implements M7 Reporting & Dashboard: project financial KPI aggregation, budget vs actual, commitment vs actual, BOQ totals/item count, cost-by-category reporting, accounting income/expense/balance, protected report API endpoints, CSV export endpoint, reporting dashboard UI, and business/contract coverage.
-
-Gate evidence is maintained in `docs/STEP-37-M7-REPORTING-DASHBOARD-GATE.md`, which records the final decision as **DONE — FINAL GATE PASSED**.
-
-## STEP 36 evidence
-
-STEP 36 implements M6 Documents & Workflow: document metadata, versioning, attachment references, approval workflow, controlled status transitions, audit trail, protected API routes, database migration `007_documents_workflow.sql`, Web UI and business/contract tests.
-
-Gate evidence is maintained in `docs/STEP-36-M6-DOCUMENTS-WORKFLOW-GATE.md`.
-
-## STEP 35 evidence
-
-STEP 35 implements M5 Accounting & Financial Controls: expanded accounting transactions with classification, tax, retention, payment status and optional financial-period linkage; financial-period lifecycle and close control; project-scoped payments; retention records; reconciliation records; protected API routes; Web UI; migration `006_accounting_financial_controls.sql`; and business validation tests.
-
-Gate evidence is maintained in `docs/STEP-35-M5-ACCOUNTING-FINANCIAL-CONTROLS-GATE.md`.
-
-## STEP 34 evidence
-
-STEP 34 implements M4 Procurement: purchase requests, RFQ/quotation records and selection, purchase orders, commitment-ready PO totals, receiving quantities and PO receiving status lifecycle.
-
-Gate evidence is maintained in `docs/STEP-34-M4-PROCUREMENT-GATE.md`.
-
-## STEP 33 evidence
-
-STEP 33 implements M3 Resources & Suppliers: material/labor/equipment resource masters, resource classifications, supplier master data, resource rates with effective dates, protected API endpoints, database migration `004_resources_suppliers.sql`, service-layer validation and effective-rate lookup, and business tests. The final production RC and health checks passed for the recorded STEP 33 commit.
-
-## STEP 32 evidence
-
-The STEP 32 scope is locked by `docs/V1.2-REMAINING-STEPS-31-45.md`: BOQ structure/revisions, estimate items, quantities/units/rates, budget-to-BOQ linkage, calculations/variance, API/UI/tests.
-
-Implementation and gate evidence are maintained in `docs/STEP-32-M2-BOQ-ESTIMATING-GATE.md`.
+The handover record is maintained in `docs/STEP-45-V1.2-PRODUCTION-HANDOVER.md`. Required closure evidence remains: PostgreSQL backup owner/schedule/retention/location; isolated non-production restore drill with backup identifier, target, timestamps, result and verifier; restored DB migration/schema and protected read-only API verification; on-call/incident escalation owner; and immutable V1.2 release tag.
 
 ## Gate rule
 
