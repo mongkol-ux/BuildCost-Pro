@@ -4,8 +4,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .accounting_models import AccountingTransaction
-from .core_models import BOQItem, BOQRevision, Budget, Cost, Project
+from .core_models import BOQItem, BOQRevision, Budget, Cost, Project, Transaction
 from .procurement_models import ProcurementRequest, PurchaseOrder
 
 
@@ -14,12 +13,12 @@ class ProjectIntegrationError(ValueError):
 
 
 def build_project_integration_summary(db: Session, project_id: str) -> dict:
-    """Return the canonical cross-module chain for one owned project.
+    """Return the canonical cross-module chain for one project.
 
     The project is the ownership boundary. BOQ and procurement records reach the
     project through their project/request relationships; cost and accounting
-    transactions carry project_id directly. The function deliberately reports
-    commitment separately from actual cost/accounting to avoid double counting.
+    transactions carry project_id directly. Commitment is reported separately
+    from actual cost/accounting so the same value is never double-counted.
     """
     project = db.get(Project, project_id)
     if project is None:
@@ -45,9 +44,9 @@ def build_project_integration_summary(db: Session, project_id: str) -> dict:
         select(func.coalesce(func.sum(Cost.total), 0)).where(Cost.project_id == project_id)
     )
     expense_total = db.scalar(
-        select(func.coalesce(func.sum(AccountingTransaction.amount), 0)).where(
-            AccountingTransaction.project_id == project_id,
-            AccountingTransaction.type == "EXPENSE",
+        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.project_id == project_id,
+            Transaction.type == "EXPENSE",
         )
     )
 
