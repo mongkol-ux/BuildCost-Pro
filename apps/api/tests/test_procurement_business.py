@@ -23,6 +23,7 @@ def test_receive_rejects_over_receipt(monkeypatch):
         def commit(self): pass
         def refresh(self, obj): pass
 
+    monkeypatch.setattr("src.procurement_service._project", lambda *args: req)
     with pytest.raises(HTTPException) as exc:
         receive(DB(), "item", "user", "admin", Decimal("3"))
     assert exc.value.status_code == 422
