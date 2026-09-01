@@ -1,6 +1,5 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
-from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -8,8 +7,11 @@ from sqlalchemy.orm import Session
 from .core_models import Project, Transaction
 from .accounting_models import FinancialPeriod, Payment, Retention, Reconciliation
 
-
 ZERO = Decimal("0.00")
+
+
+def reconciliation_status(actual: Decimal, expected: Decimal) -> str:
+    return "MATCHED" if actual.quantize(Decimal("0.01")) == expected.quantize(Decimal("0.01")) else "MISMATCH"
 
 
 def _project(db: Session, project_id: str, user_id: str, role: str) -> Project:
@@ -54,6 +56,23 @@ def close_period(db: Session, project_id: str, period_id: str, user_id: str, rol
         return item
     item.status = "CLOSED"
     item.closed_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def create_accounting_transaction(db: Session, project_id: str, user_id: str, role: str, data: dict) -> Transaction:
+    _project(db, project_id, user_id, role)
+    period_id = data.get("financial_period_id")
+    if period_id:
+        period = _period(db, project_id, period_id)
+        if period.status == "CLOSED":
+            raise HTTPException(status_code=409, detail="financial period is closed")
+        occurred_at = data.get("occurred_at")
+        if occurred_at and not (period.start_date <= occurred_at.date() <= period.end_date):
+            raise HTTPException(status_code=422, detail="transaction date is outside financial period")
+    item = Transaction(project_id=project_id, **{k: v for k, v in data.items() if v is not None})
+    db.add(item)
     db.commit()
     db.refresh(item)
     return item
@@ -104,7 +123,7 @@ def reconcile(db: Session, project_id: str, user_id: str, role: str, period_id: 
     actual = Decimal(str(actual)).quantize(Decimal("0.01"))
     expected_total = expected_total.quantize(Decimal("0.01"))
     difference = (actual - expected_total).quantize(Decimal("0.01"))
-    item = Reconciliation(project_id=project_id, financial_period_id=period.id, expected_total=expected_total, actual_total=actual, difference=difference, status="MATCHED" if difference == ZERO else "MISMATCH")
+    item = Reconciliation(project_id=project_id, financial_period_id=period.id, expected_total=expected_total, actual_total=actual, difference=difference, status=reconciliation_status(actual, expected_total))
     db.add(item)
     db.commit()
     db.refresh(item)
