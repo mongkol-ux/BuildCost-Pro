@@ -35,6 +35,12 @@ class Settings(BaseSettings):
                 hosts.add(railway_public_domain)
         return sorted(hosts)
 
+    def get_cors_origins(self) -> list[str]:
+        origins = {item.strip() for item in self.cors_origins.split(",") if item.strip()}
+        if self.environment == "production":
+            origins.add("https://buildcost-pro-production.up.railway.app")
+        return sorted(origins)
+
     def validate_production_secrets(self) -> None:
         if self.environment == "production":
             if self.jwt_secret.startswith("dev-only-"):
@@ -43,7 +49,7 @@ class Settings(BaseSettings):
                 raise ValueError("BUILD_COST_JWT_SECRET must be at least 32 characters in production")
             if not self.cookie_secure:
                 raise ValueError("BUILD_COST_COOKIE_SECURE must remain enabled in production")
-            origins = {item.strip() for item in self.cors_origins.split(",") if item.strip()}
+            origins = set(self.get_cors_origins())
             if "*" in origins or any(origin.startswith("http://localhost") for origin in origins):
                 raise ValueError("BUILD_COST_CORS_ORIGINS must not allow wildcard or localhost in production")
 
