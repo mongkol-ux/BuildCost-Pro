@@ -11,7 +11,6 @@ from .auth_security import decode_access_token
 from .auth_service import login, register, request_password_reset, reset_password, revoke_all_sessions, revoke_session, rotate_refresh, verify_email
 from .database import SessionLocal
 
-SessionLocal = SessionLocal
 router = APIRouter(prefix="/auth", tags=["authentication"])
 bearer = HTTPBearer(auto_error=False)
 
