@@ -2,7 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://buildcost-pro-production.up.railway.app";
+const WEB_ORIGIN = "https://buildcost-pro-production.up.railway.app";
+const DEFAULT_API_BASE = "https://reasonable-determination-production-52dc.up.railway.app";
+const configuredApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+const API = configuredApiBase && configuredApiBase !== WEB_ORIGIN ? configuredApiBase : DEFAULT_API_BASE;
 type Project = { id: string; code: string; name: string };
 type Revision = { id: string; revision_no: number; name: string; budget_id?: string | null; status: string };
 type Item = { id: string; item_code: string; description: string; unit: string; quantity: string; unit_rate: string; total: string };
