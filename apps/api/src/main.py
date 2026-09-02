@@ -1,12 +1,15 @@
 """BuildCost Pro API application and security boundary."""
 import logging
 import uuid
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .auth_router import router as auth_router
 from .config import get_settings
 from .core_router import router as core_router
+from .database import bootstrap_database
 from .resource_router import router as resource_router
 from .procurement_router import router as procurement_router
 from .accounting_router import router as accounting_router
@@ -24,7 +27,15 @@ settings = get_settings()
 logger = logging.getLogger("buildcost_pro.security")
 docs_url = None if settings.environment == "production" else "/docs"
 redoc_url = None if settings.environment == "production" else "/redoc"
-app = FastAPI(title=settings.app_name, version="1.0.0", docs_url=docs_url, redoc_url=redoc_url)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    bootstrap_database()
+    yield
+
+
+app = FastAPI(title=settings.app_name, version="1.0.0", docs_url=docs_url, redoc_url=redoc_url, lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.get_allowed_hosts())
 app.add_middleware(CORSMiddleware, allow_origins=settings.get_cors_origins(), allow_credentials=False, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-Requested-With"])
 
