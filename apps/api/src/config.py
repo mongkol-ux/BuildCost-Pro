@@ -1,7 +1,8 @@
 """Runtime configuration for the authentication and security boundary."""
 import os
 from functools import lru_cache
-from pydantic import Field
+
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,31 @@ class Settings(BaseSettings):
     # when BUILD_COST_ALLOWED_HOSTS is supplied as an override.
     allowed_hosts: str = "localhost,127.0.0.1,testserver,healthcheck.railway.app,*.up.railway.app"
     cors_origins: str = "http://localhost:3000"
+
+    @model_validator(mode="after")
+    def normalize_database_url(self) -> "Settings":
+        """Normalize Railway Postgres URL variants without exposing secrets."""
+        database_url = self.database_url.strip()
+
+        # Railway references normally resolve before process startup. If the
+        # reference is accidentally passed through literally, use Railway's
+        # standard DATABASE_URL when it is available in the environment.
+        if database_url.startswith("${{") and database_url.endswith("}}"):
+            railway_database_url = os.getenv("DATABASE_URL", "").strip()
+            if railway_database_url:
+                database_url = railway_database_url
+            else:
+                raise ValueError(
+                    "BUILD_COST_DATABASE_URL contains an unresolved reference and DATABASE_URL is unavailable"
+                )
+
+        if database_url.startswith("postgres://"):
+            database_url = "postgresql+psycopg://" + database_url.removeprefix("postgres://")
+        elif database_url.startswith("postgresql://"):
+            database_url = "postgresql+psycopg://" + database_url.removeprefix("postgresql://")
+
+        self.database_url = database_url
+        return self
 
     def get_allowed_hosts(self) -> list[str]:
         hosts = {h.strip() for h in self.allowed_hosts.split(",") if h.strip()}
