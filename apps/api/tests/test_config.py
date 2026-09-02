@@ -32,7 +32,7 @@ def test_database_url_strips_accidental_quotes() -> None:
 
 
 def test_database_url_rejects_non_postgresql_scheme() -> None:
-    with pytest.raises(ValueError, match="must be a PostgreSQL URL"):
+    with pytest.raises(ValueError, match="is not a valid PostgreSQL URL"):
         Settings(database_url="mysql://user:pass@localhost:3306/buildcost", _env_file=None)
 
 
