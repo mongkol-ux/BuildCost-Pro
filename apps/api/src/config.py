@@ -24,9 +24,6 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lock_minutes: int = 15
     cookie_secure: bool = True
-    # Railway healthchecks originate from healthcheck.railway.app.
-    # In production, these mandatory Railway hosts are always retained even
-    # when BUILD_COST_ALLOWED_HOSTS is supplied as an override.
     allowed_hosts: str = "localhost,127.0.0.1,testserver,healthcheck.railway.app,*.up.railway.app"
     cors_origins: str = "http://localhost:3000"
 
@@ -48,18 +45,26 @@ class Settings(BaseSettings):
         primary = self.database_url.strip()
         candidates: list[str] = []
 
-        # Railway references normally resolve before process startup. If a
-        # reference reaches the process literally, prefer Railway's standard
-        # DATABASE_URL. We also use it when a manually-created primary value
-        # is malformed, which makes the service resilient to UI variable drift.
-        if not (primary.startswith("${{") and primary.endswith("}}")):
-            candidates.append(primary)
+        # If BUILD_COST_DATABASE_URL was explicitly supplied, it is authoritative.
+        # Otherwise prefer Railway's standard DATABASE_URL over the local-dev default.
+        explicit_primary = os.getenv("BUILD_COST_DATABASE_URL", "").strip()
         railway_database_url = os.getenv("DATABASE_URL", "").strip()
-        if railway_database_url:
+        if explicit_primary:
+            candidates.append(primary)
+        elif railway_database_url:
+            candidates.append(railway_database_url)
+        else:
+            candidates.append(primary)
+
+        # If the explicit primary is unresolved or malformed, Railway's standard
+        # DATABASE_URL is a safe fallback. Secrets are never included in errors.
+        if railway_database_url and railway_database_url not in candidates:
             candidates.append(railway_database_url)
 
         normalized: str | None = None
         for candidate in candidates:
+            if candidate.startswith("${{") and candidate.endswith("}}"):
+                continue
             try:
                 normalized = self._normalize_database_candidate(candidate)
                 break
