@@ -1,12 +1,10 @@
 """Apply checked-in SQL migrations in order for the deployed API."""
 from pathlib import Path
-from sqlalchemy import create_engine, text
-from .config import get_settings
+from sqlalchemy import text
+from .database import engine
 
 
 def main() -> None:
-    settings = get_settings()
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
     root = Path(__file__).resolve().parents[1] / "migrations"
     migrations = sorted(root.glob("*.sql"))
     with engine.begin() as connection:
