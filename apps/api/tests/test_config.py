@@ -3,6 +3,15 @@ import pytest
 from src.config import Settings
 
 
+def test_database_url_prefers_railway_database_url_when_buildcost_var_is_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BUILD_COST_DATABASE_URL", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@postgres.internal:5432/buildcost")
+
+    settings = Settings()
+
+    assert settings.database_url == "postgresql+psycopg://user:pass@postgres.internal:5432/buildcost"
+
+
 def test_database_url_uses_railway_database_url_for_unresolved_reference(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@postgres.internal:5432/buildcost")
 
