@@ -3,17 +3,15 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from .auth_models import AuthSession, User
 from .auth_schemas import LoginRequest, OneTimeTokenRequest, PasswordResetEmailRequest, PasswordResetRequest, RefreshRequest, RegisterRequest, SessionResponse, TokenResponse
 from .auth_security import decode_access_token
 from .auth_service import login, register, request_password_reset, reset_password, revoke_all_sessions, revoke_session, rotate_refresh, verify_email
-from .config import get_settings
+from .database import SessionLocal
 
-settings = get_settings()
-engine = create_engine(settings.database_url, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+SessionLocal = SessionLocal
 router = APIRouter(prefix="/auth", tags=["authentication"])
 bearer = HTTPBearer(auto_error=False)
 
