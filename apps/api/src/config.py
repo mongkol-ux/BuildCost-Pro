@@ -30,35 +30,50 @@ class Settings(BaseSettings):
     allowed_hosts: str = "localhost,127.0.0.1,testserver,healthcheck.railway.app,*.up.railway.app"
     cors_origins: str = "http://localhost:3000"
 
+    @staticmethod
+    def _normalize_database_candidate(value: str) -> str:
+        candidate = value.strip().strip("\"'")
+        if candidate.startswith("postgres://"):
+            candidate = "postgresql+psycopg://" + candidate.removeprefix("postgres://")
+        elif candidate.startswith("postgresql://"):
+            candidate = "postgresql+psycopg://" + candidate.removeprefix("postgresql://")
+        if not candidate.startswith("postgresql+psycopg://"):
+            raise ValueError("not a PostgreSQL URL")
+        make_url(candidate)
+        return candidate
+
     @model_validator(mode="after")
     def normalize_and_validate_database(self) -> "Settings":
         """Resolve and normalize Railway Postgres URLs without exposing secrets."""
-        database_url = self.database_url.strip().strip("\"'")
+        primary = self.database_url.strip()
+        candidates: list[str] = []
 
         # Railway references normally resolve before process startup. If a
-        # reference reaches the process literally, use Railway's standard
-        # DATABASE_URL as a safe fallback when it is available.
-        if database_url.startswith("${{") and database_url.endswith("}}"):
-            database_url = os.getenv("DATABASE_URL", "").strip().strip("\"'")
-            if not database_url:
+        # reference reaches the process literally, prefer Railway's standard
+        # DATABASE_URL. We also use it when a manually-created primary value
+        # is malformed, which makes the service resilient to UI variable drift.
+        if not (primary.startswith("${{") and primary.endswith("}}")):
+            candidates.append(primary)
+        railway_database_url = os.getenv("DATABASE_URL", "").strip()
+        if railway_database_url:
+            candidates.append(railway_database_url)
+
+        normalized: str | None = None
+        for candidate in candidates:
+            try:
+                normalized = self._normalize_database_candidate(candidate)
+                break
+            except Exception:
+                continue
+
+        if normalized is None:
+            if primary.startswith("${{") and primary.endswith("}}"):
                 raise ValueError(
-                    "BUILD_COST_DATABASE_URL contains an unresolved reference and DATABASE_URL is unavailable"
+                    "BUILD_COST_DATABASE_URL contains an unresolved reference and DATABASE_URL is unavailable or invalid"
                 )
+            raise ValueError("BUILD_COST_DATABASE_URL is not a valid PostgreSQL URL")
 
-        if database_url.startswith("postgres://"):
-            database_url = "postgresql+psycopg://" + database_url.removeprefix("postgres://")
-        elif database_url.startswith("postgresql://"):
-            database_url = "postgresql+psycopg://" + database_url.removeprefix("postgresql://")
-
-        if not database_url.startswith("postgresql+psycopg://"):
-            raise ValueError("BUILD_COST_DATABASE_URL must be a PostgreSQL URL")
-
-        try:
-            make_url(database_url)
-        except Exception as exc:
-            raise ValueError("BUILD_COST_DATABASE_URL is not a valid PostgreSQL URL") from exc
-
-        self.database_url = database_url
+        self.database_url = normalized
         if self.environment == "production" and self.database_bootstrap == "none":
             self.database_bootstrap = "validate"
         return self
