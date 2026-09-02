@@ -26,7 +26,7 @@ docs_url = None if settings.environment == "production" else "/docs"
 redoc_url = None if settings.environment == "production" else "/redoc"
 app = FastAPI(title=settings.app_name, version="1.0.0", docs_url=docs_url, redoc_url=redoc_url)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.get_allowed_hosts())
-app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()], allow_credentials=False, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-Requested-With"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.get_cors_origins(), allow_credentials=False, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type", "X-Requested-With"])
 
 @app.middleware("http")
 async def security_headers(request, call_next):
@@ -41,7 +41,8 @@ async def security_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    # The API is intentionally consumed cross-origin by the production Web app.
+    response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
     response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
     response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
     response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/auth") else "no-cache"
