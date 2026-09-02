@@ -1,9 +1,11 @@
 """Runtime configuration for the authentication and security boundary."""
 import os
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -12,6 +14,7 @@ class Settings(BaseSettings):
     app_name: str = "BuildCost Pro API"
     environment: str = "development"
     database_url: str = "postgresql+psycopg://buildcost:buildcost@localhost:5432/buildcost"
+    database_bootstrap: Literal["none", "validate", "create_all"] = "none"
     jwt_secret: str = Field(default="dev-only-change-this-secret-before-production-32", min_length=32)
     jwt_issuer: str = "buildcost-pro"
     access_token_minutes: int = 15
@@ -28,18 +31,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
 
     @model_validator(mode="after")
-    def normalize_database_url(self) -> "Settings":
-        """Normalize Railway Postgres URL variants without exposing secrets."""
-        database_url = self.database_url.strip()
+    def normalize_and_validate_database(self) -> "Settings":
+        """Resolve and normalize Railway Postgres URLs without exposing secrets."""
+        database_url = self.database_url.strip().strip("\"'")
 
-        # Railway references normally resolve before process startup. If the
-        # reference is accidentally passed through literally, use Railway's
-        # standard DATABASE_URL when it is available in the environment.
+        # Railway references normally resolve before process startup. If a
+        # reference reaches the process literally, use Railway's standard
+        # DATABASE_URL as a safe fallback when it is available.
         if database_url.startswith("${{") and database_url.endswith("}}"):
-            railway_database_url = os.getenv("DATABASE_URL", "").strip()
-            if railway_database_url:
-                database_url = railway_database_url
-            else:
+            database_url = os.getenv("DATABASE_URL", "").strip().strip("\"'")
+            if not database_url:
                 raise ValueError(
                     "BUILD_COST_DATABASE_URL contains an unresolved reference and DATABASE_URL is unavailable"
                 )
@@ -49,7 +50,17 @@ class Settings(BaseSettings):
         elif database_url.startswith("postgresql://"):
             database_url = "postgresql+psycopg://" + database_url.removeprefix("postgresql://")
 
+        if not database_url.startswith("postgresql+psycopg://"):
+            raise ValueError("BUILD_COST_DATABASE_URL must be a PostgreSQL URL")
+
+        try:
+            make_url(database_url)
+        except Exception as exc:
+            raise ValueError("BUILD_COST_DATABASE_URL is not a valid PostgreSQL URL") from exc
+
         self.database_url = database_url
+        if self.environment == "production" and self.database_bootstrap == "none":
+            self.database_bootstrap = "validate"
         return self
 
     def get_allowed_hosts(self) -> list[str]:
@@ -75,6 +86,8 @@ class Settings(BaseSettings):
                 raise ValueError("BUILD_COST_JWT_SECRET must be at least 32 characters in production")
             if not self.cookie_secure:
                 raise ValueError("BUILD_COST_COOKIE_SECURE must remain enabled in production")
+            if self.database_bootstrap == "create_all":
+                raise ValueError("BUILD_COST_DATABASE_BOOTSTRAP=create_all is not allowed in production")
             origins = set(self.get_cors_origins())
             if "*" in origins or any(origin.startswith("http://localhost") for origin in origins):
                 raise ValueError("BUILD_COST_CORS_ORIGINS must not allow wildcard or localhost in production")
