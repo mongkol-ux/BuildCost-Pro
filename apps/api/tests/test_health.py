@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from src.config import Settings
 from src.main import app
 
 
@@ -41,16 +42,26 @@ def test_hsts_is_emitted_for_public_https_proxy() -> None:
     assert response.headers["strict-transport-security"] == "max-age=31536000; includeSubDomains"
 
 
-def test_production_web_origin_has_cors_preflight_support() -> None:
+def test_configured_web_origin_has_cors_preflight_support() -> None:
+    origin = Settings().get_cors_origins()[0]
     response = client.options(
         "/auth/login",
         headers={
-            "Origin": "https://buildcost-pro-production.up.railway.app",
+            "Origin": origin,
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type",
         },
     )
     assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == "https://buildcost-pro-production.up.railway.app"
+    assert response.headers["access-control-allow-origin"] == origin
     assert "POST" in response.headers["access-control-allow-methods"]
     assert "content-type" in response.headers["access-control-allow-headers"].lower()
+
+
+def test_production_settings_include_railway_web_origin() -> None:
+    settings = Settings(
+        environment="production",
+        jwt_secret="production-test-secret-0123456789-abcdefghijklmnopqrstuvwxyz",
+        cors_origins="https://example.test",
+    )
+    assert "https://buildcost-pro-production.up.railway.app" in settings.get_cors_origins()
