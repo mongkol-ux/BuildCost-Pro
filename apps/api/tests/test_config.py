@@ -11,6 +11,14 @@ def test_database_url_uses_railway_database_url_for_unresolved_reference(monkeyp
     assert settings.database_url == "postgresql+psycopg://user:pass@postgres.internal:5432/buildcost"
 
 
+def test_database_url_falls_back_when_primary_value_is_malformed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@postgres.internal:5432/buildcost")
+
+    settings = Settings(database_url="Postgres -> DATABASE_URL")
+
+    assert settings.database_url == "postgresql+psycopg://user:pass@postgres.internal:5432/buildcost"
+
+
 def test_database_url_normalizes_postgres_scheme() -> None:
     settings = Settings(database_url="postgres://user:pass@localhost:5432/buildcost")
 
@@ -25,7 +33,7 @@ def test_database_url_strips_accidental_quotes() -> None:
 
 def test_database_url_rejects_non_postgresql_scheme() -> None:
     with pytest.raises(ValueError, match="must be a PostgreSQL URL"):
-        Settings(database_url="mysql://user:pass@localhost:3306/buildcost")
+        Settings(database_url="mysql://user:pass@localhost:3306/buildcost", _env_file=None)
 
 
 def test_unresolved_database_reference_fails_without_railway_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
