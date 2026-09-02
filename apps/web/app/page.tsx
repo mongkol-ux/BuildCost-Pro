@@ -2,7 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://buildcost-pro-production.up.railway.app";
+const WEB_ORIGIN = "https://buildcost-pro-production.up.railway.app";
+const DEFAULT_API_BASE = "https://reasonable-determination-production-52dc.up.railway.app";
+const configuredApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+// Never send API calls back to the web service itself. This prevents a production
+// env mismatch from turning valid API routes such as /auth/login into web 404s.
+const API = configuredApiBase && configuredApiBase !== WEB_ORIGIN ? configuredApiBase : DEFAULT_API_BASE;
 type Project = { id: string; code: string; name: string; status: string; description?: string | null };
 type Summary = { budget_total: string; cost_total: string; income_total: string; expense_total: string; balance: string; budget_remaining: string };
 
