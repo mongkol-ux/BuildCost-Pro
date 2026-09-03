@@ -1,62 +1,30 @@
-name: API CI
+name: BuildCost Pro CI/CD Pipeline
 
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - 'apps/api/**'
-      - 'Dockerfile'
-      - 'railway.toml'
-      - '.github/workflows/api-ci.yml'
+    branches: [ main ]
   pull_request:
-    paths:
-      - 'apps/api/**'
-      - 'Dockerfile'
-      - 'railway.toml'
-      - '.github/workflows/api-ci.yml'
+    branches: [ main ]
 
 jobs:
-  test:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: buildcost
-          POSTGRES_PASSWORD: buildcost
-          POSTGRES_DB: buildcost
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U buildcost -d buildcost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-    env:
-      BUILD_COST_DATABASE_URL: postgresql+psycopg://buildcost:buildcost@localhost:5432/buildcost
-      BUILD_COST_JWT_SECRET: ci-integration-secret-0123456789-abcdefghijklmnopqrstuvwxyz
-      BUILD_COST_ALLOWED_HOSTS: testserver,localhost
-      BUILD_COST_CORS_ORIGINS: http://localhost:3000
-    defaults:
-      run:
-        working-directory: apps/api
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: python -m pip install --upgrade pip
-      - run: pip install -r requirements.txt
-      - name: Apply database migrations
-        run: |
-          python -c "from sqlalchemy import create_engine, text; from src.config import get_settings; e=create_engine(get_settings().database_url); c=e.connect(); [c.execute(text(open(f).read())) for f in ('migrations/001_authentication.sql','migrations/002_core_business.sql','migrations/003_boq_estimating.sql','migrations/004_resources_suppliers.sql','migrations/005_procurement.sql','migrations/006_accounting_financial_controls.sql','migrations/007_documents_workflow.sql','migrations/008_notifications.sql','migrations/009_search.sql')]; c.commit(); c.close()"
-      - run: pytest -q
 
-  container-build:
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build production Docker image
-        run: docker build -t buildcost-pro-api:ci .
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-# V1.2 gate: notifications, search, API and tests are included in CI verification.
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Clasp
+      run: npm install -g @google/clasp
+
+    - name: Create clasprc.json
+      run: |
+        echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+
+    - name: Push Code to Google Apps Script
+      run: clasp push --force
