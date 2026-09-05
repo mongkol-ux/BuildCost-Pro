@@ -51,6 +51,8 @@ def list_periods(db: Session, project_id: str, user_id: str, role: str) -> list[
 
 def close_period(db: Session, project_id: str, period_id: str, user_id: str, role: str) -> FinancialPeriod:
     _project(db, project_id, user_id, role)
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="only an admin can close a financial period")
     item = _period(db, project_id, period_id)
     if item.status == "CLOSED":
         return item
@@ -61,16 +63,26 @@ def close_period(db: Session, project_id: str, period_id: str, user_id: str, rol
     return item
 
 
+def validate_transaction_period(db: Session, project_id: str, data: dict) -> None:
+    """Enforce financial-period controls for any code path that creates a Transaction.
+
+    Shared by both the accounting router and the core router so a closed period
+    cannot be bypassed by posting through the other endpoint.
+    """
+    period_id = data.get("financial_period_id")
+    if not period_id:
+        return
+    period = _period(db, project_id, period_id)
+    if period.status == "CLOSED":
+        raise HTTPException(status_code=409, detail="financial period is closed")
+    occurred_at = data.get("occurred_at")
+    if occurred_at and not (period.start_date <= occurred_at.date() <= period.end_date):
+        raise HTTPException(status_code=422, detail="transaction date is outside financial period")
+
+
 def create_accounting_transaction(db: Session, project_id: str, user_id: str, role: str, data: dict) -> Transaction:
     _project(db, project_id, user_id, role)
-    period_id = data.get("financial_period_id")
-    if period_id:
-        period = _period(db, project_id, period_id)
-        if period.status == "CLOSED":
-            raise HTTPException(status_code=409, detail="financial period is closed")
-        occurred_at = data.get("occurred_at")
-        if occurred_at and not (period.start_date <= occurred_at.date() <= period.end_date):
-            raise HTTPException(status_code=422, detail="transaction date is outside financial period")
+    validate_transaction_period(db, project_id, data)
     item = Transaction(project_id=project_id, **{k: v for k, v in data.items() if v is not None})
     db.add(item)
     db.commit()
