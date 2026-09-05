@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from .accounting_service import validate_transaction_period
 from .core_calculations import summarize
 from .core_models import Budget, Cost, Project, Transaction
 
@@ -83,6 +84,7 @@ def list_costs(db: Session, project_id: str, user_id: str, role: str) -> list[Co
 
 def create_transaction(db: Session, project_id: str, user_id: str, role: str, data: dict) -> Transaction:
     _project_or_404(db, project_id, user_id, role)
+    validate_transaction_period(db, project_id, data)
     data = {key: value for key, value in data.items() if value is not None}
     item = Transaction(project_id=project_id, **data)
     db.add(item)

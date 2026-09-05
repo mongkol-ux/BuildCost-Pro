@@ -3,15 +3,20 @@
 import { FormEvent, useEffect, useState } from "react";
 
 const WEB_ORIGIN = "https://buildcost-pro-production.up.railway.app";
-const DEFAULT_API_BASE = "https://reasonable-determination-production-52dc.up.railway.app";
 const configuredApiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 // Never send API calls back to the web service itself. This prevents a production
 // env mismatch from turning valid API routes such as /auth/login into web 404s.
-const API = configuredApiBase && configuredApiBase !== WEB_ORIGIN ? configuredApiBase : DEFAULT_API_BASE;
+// There is intentionally NO hardcoded fallback here: silently pointing at some
+// other project's API (as a previous placeholder domain did) makes every login
+// fail with a confusing "invalid credentials" error instead of a clear one.
+const API = configuredApiBase && configuredApiBase !== WEB_ORIGIN ? configuredApiBase : null;
 type Project = { id: string; code: string; name: string; status: string; description?: string | null };
 type Summary = { budget_total: string; cost_total: string; income_total: string; expense_total: string; balance: string; budget_remaining: string };
 
 async function api(path: string, options: RequestInit = {}) {
+  if (!API) {
+    throw new Error("API is not configured: set NEXT_PUBLIC_API_BASE_URL on the web service to your API service's public URL.");
+  }
   const token = typeof window !== "undefined" ? localStorage.getItem("buildcost_access") : null;
   const headers = new Headers(options.headers);
   if (options.body) headers.set("Content-Type", "application/json");

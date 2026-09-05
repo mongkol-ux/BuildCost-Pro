@@ -65,6 +65,7 @@ class TransactionCreate(BaseModel):
     description: str | None = Field(default=None, max_length=5000)
     amount: Decimal = Field(gt=0, max_digits=18, decimal_places=2)
     occurred_at: datetime | None = None
+    financial_period_id: str | None = Field(default=None, min_length=1, max_length=36)
 
 
 class TransactionResponse(TransactionCreate):
@@ -122,5 +123,3 @@ class BOQEstimateSummary(BaseModel):
     budget_amount: Decimal
     estimate_total: Decimal
     variance: Decimal
-    variance_percent: Decimal | None
-    item_count: int
